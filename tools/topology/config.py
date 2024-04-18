@@ -38,6 +38,7 @@ from topology.util import write_file
 from topology.cert import CertGenArgs, CertGenerator
 from topology.common import ArgsBase
 from topology.docker import DockerGenArgs, DockerGenerator
+from topology.kathara import KatharaLabGenerator, KatharaLabGenArgs
 from topology.go import GoGenArgs, GoGenerator
 from topology.net import (
     NetworkDescription,
@@ -72,6 +73,12 @@ class ConfigGenerator(object):
         self.args = args
         with open(self.args.topo_config) as f:
             self.topo_config = yaml.load(f, Loader=yaml.SafeLoader)
+        if self.args.kathara and self.args.megalos:
+            logging.critical("Cannot use kathara and megalos at the same time!")
+            sys.exit(1)
+        if (self.args.kathara or self.args.megalos) and not self.args.docker:
+            logging.info("Enabling docker for kathara/megalos lab creation")
+            self.args.docker = True
         if self.args.sig and not self.args.docker:
             logging.critical("Cannot use sig without docker!")
             sys.exit(1)
@@ -98,6 +105,8 @@ class ConfigGenerator(object):
         self._generate_with_topo(topo_dicts)
         self._write_networks_conf(self.networks, NETWORKS_FILE)
         self._write_sciond_conf(self.networks, SCIOND_ADDRESSES_FILE)
+        if (self.args.kathara or self.args.megalos):
+            self._generate_kathara(topo_dicts)
 
     def _ensure_uniq_ases(self):
         seen = set()
@@ -167,6 +176,14 @@ class ConfigGenerator(object):
 
     def _monitoring_args(self, topo_dicts):
         return MonitoringGenArgs(self.args, topo_dicts, self.networks)
+    
+    def _generate_kathara(self, topo_dicts):
+        args = self._kathara_args(topo_dicts)
+        kathara_gen = KatharaLabGenerator(args)
+        kathara_gen.generate_lab()
+
+    def _kathara_args(self, topo_dicts):
+        return KatharaLabGenArgs(self.args, topo_dicts, self.networks)
 
     def _write_ca_files(self, topo_dicts, ca_files):
         isds = set()
