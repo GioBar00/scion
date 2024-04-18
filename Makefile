@@ -68,6 +68,10 @@ docker-images:
 	@echo "Build scion tester"
 	bazel run //docker:test
 
+docker-images-kathara:
+	@echo "Build perapp images for kathara"
+	bazel run //docker:kathara
+
 scion-topo:
 	bazel build //:scion-topo
 	tar --overwrite -xf bazel-bin/scion-topo.tar -C bin

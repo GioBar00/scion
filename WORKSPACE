@@ -220,6 +220,22 @@ container_pull(
     tag = "10",
 )
 
+container_pull(
+    name = "debian12.5",
+    digest = "sha256:ada577e24663e2f16bd2aa706bd11d4594f52b9ae08fd3a2156eeefdb8dff1a2",
+    registry = "index.docker.io",
+    repository = "library/debian",
+    tag = "12.5",
+)
+
+container_pull(
+    name = "debian12.5-slim",
+    digest = "sha256:346dd1cba3caf44de9467ae428a9d38573f14665408acb80a615e2a7c3f9a2a4",
+    registry = "index.docker.io",
+    repository = "library/debian",
+    tag = "12.5-slim",
+)
+
 # protobuf/gRPC
 http_archive(
     name = "rules_proto_grpc",

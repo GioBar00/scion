@@ -1,5 +1,5 @@
 load("@io_bazel_rules_docker//container:container.bzl", "container_bundle")
-load(":scion_app.bzl", "scion_app_base", "scion_app_images")
+load(":scion_app.bzl", "scion_app_base", "scion_app_images", "scion_app_images_kathara")
 load(":tester.bzl", "build_tester_image")
 
 container_bundle(
@@ -9,7 +9,17 @@ container_bundle(
         "daemon:latest": ":daemon",
         "dispatcher:latest": ":dispatcher",
         "posix-gateway:latest": ":posix_gateway",
-        "posix-router:latest": "posix_router",
+        "posix-router:latest": ":posix_router",
+    },
+    visibility = ["//visibility:public"],
+)
+
+container_bundle(
+    name = "kathara",
+    images = {
+        "control:kathara": ":control_kathara",
+        "posix-router:kathara": ":posix_router_kathara",
+        "endhost:kathara": ":endhost_kathara",
     },
     visibility = ["//visibility:public"],
 )
@@ -76,6 +86,24 @@ scion_app_images(
         "/etc/scion/sig.toml",
     ],
     entrypoint = ["/app/gateway"],
+)
+
+scion_app_images_kathara(
+    name = "posix_router_kathara",
+    src = "//router/cmd/router",
+    cmd = [
+        "bash",
+    ],
+    entrypoint = None,
+)
+
+scion_app_images_kathara(
+    name = "control_kathara",
+    src = "//control/cmd/control",
+    cmd = [
+        "bash",
+    ],
+    entrypoint = None,
 )
 
 filegroup(
