@@ -4,7 +4,7 @@ load("@io_bazel_rules_docker//docker/package_managers:download_pkgs.bzl", "downl
 load("@io_bazel_rules_docker//docker/package_managers:install_pkgs.bzl", "install_pkgs")
 load("@debian_buster_amd64//debs:deb_packages.bzl", packages = "debian_buster_amd64")
 
-def build_tester_image_gen(name, base_image, debs = [], layers = [], tars = []):
+def build_tester_image_gen(name, base_image, layers = [], tars = []):
     download_pkgs(
         name = "%s_pkgs" % name,
         image_tar = base_image,
@@ -66,7 +66,6 @@ def build_tester_image_gen(name, base_image, debs = [], layers = [], tars = []):
             "TZ": "UTC",
             "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/share/bin",
         },
-        debs = debs,
         tars = tars,
         workdir = "/share",
         cmd = "tail -f /dev/null",
@@ -76,18 +75,11 @@ def build_tester_image_gen(name, base_image, debs = [], layers = [], tars = []):
 
 def build_tester_image():
     build_tester_image_gen("tester", "@debian10//image", tars = [":tester_share"])
-    # Debian packages to install.
-    debs = [
-        packages["libc6"],
-        # we need setcap so that we can add network capabilities to apps
-        packages["libcap2"],
-        packages["libcap2-bin"],
-    ]
     pkg_tar(
         name = "endhost_kathara_docker_files",
         srcs = ["//daemon/cmd/daemon"],
         package_dir = "/app",
         mode = "0755",
     )
-    build_tester_image_gen("endhost_kathara", "@debian10//image", debs, [":app_base_kathara_share_dirs_layer"], ["endhost_kathara_share", "endhost_kathara_docker_files"])
+    build_tester_image_gen("endhost_kathara", "@debian10//image", [":app_base_kathara_share_dirs_layer"], ["endhost_kathara_share", "endhost_kathara_docker_files"])
     

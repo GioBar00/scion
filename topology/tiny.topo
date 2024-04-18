@@ -6,10 +6,13 @@ ASes:
     authoritative: true
     issuing: true
     mtu: 1400
+    dispatched_ports: "1024-65535"
   "1-ff00:0:111":
     cert_issuer: 1-ff00:0:110
+    dispatched_ports: "1024-65535"
   "1-ff00:0:112":
     cert_issuer: 1-ff00:0:110
+    dispatched_ports: "1024-65535"
     underlay: UDP/IPv6
 links:
   - {a: "1-ff00:0:110#1", b: "1-ff00:0:111#41", linkAtoB: CHILD, mtu: 1280}

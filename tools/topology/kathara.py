@@ -48,6 +48,7 @@ class KatharaLabGenerator(object):
         self.if_name = "eth" if self.args.kathara else "net"
         self.output_base = os.environ.get('SCION_OUTPUT_BASE', os.getcwd())
         self.lab_dir = str(os.path.join(self.args.output_dir, KATHARA_GEN_PATH))
+        self.config_dir = "etc/scion"
 
     def get_real_device_id(self, dev_id):
         real_dev_id = dev_id.replace("_", "-", 1)
@@ -159,11 +160,11 @@ class KatharaLabGenerator(object):
                 self.device_startup[dev_id]["content"] += "sleep 2s\n"
 
                 if dev_id.startswith("br"):
-                    self.device_startup[dev_id]["content"] += f'/app/router --config /share/conf/br.toml &\n'
+                    self.device_startup[dev_id]["content"] += f'/app/router --config /{self.config_dir}/br.toml &\n'
                 elif dev_id.startswith("cs"):
-                    self.device_startup[dev_id]["content"] += f'/app/control --config /share/conf/cs.toml &\n'
+                    self.device_startup[dev_id]["content"] += f'/app/control --config /{self.config_dir}/cs.toml &\n'
                 elif dev_id.startswith("sd"):
-                    self.device_startup[dev_id]["content"] += f'/app/daemon --config /share/conf/sd.toml &\n'
+                    self.device_startup[dev_id]["content"] += f'/app/daemon --config /{self.config_dir}/sd.toml &\n'
 
     def _add_enviroment_variables(self):
         for topo_id, _ in self.args.topo_dicts.items():
@@ -173,31 +174,7 @@ class KatharaLabGenerator(object):
             # Read SD config
             with open(sd_toml, "r") as f:
                 sd_config = toml.load(f)
-                self.device_startup[sd_dev_id]["content"] += f'echo \'export SCION_DAEMON="{sd_config["sd"]["address"]}"\' >> /root/.bashrc \n'
-
-    # def _patch_sd_config(self):
-    #     for topo_id, _ in self.args.topo_dicts.items():
-    #         conf_dir = str(os.path.join(self.output_base, topo_id.base_dir(self.args.output_dir)))
-    #         sd_toml = os.path.join(conf_dir, "sd.toml")
-    #         sd_dev_id = sciond_name(topo_id).replace("-", "_")
-    #         # Patch the SD config
-    #         with open(sd_toml, "r+") as f:
-    #             sd_config = toml.load(f)
-    #             # if self.device_startup[sd_dev_id]["is_ipv6"]:
-    #             #     loopback = "::1"
-    #             # else:
-    #             #     loopback = "127.0.0.1"
-    #             ip = str(self.device_startup[sd_dev_id]["ip"].ip)
-    #             if self.device_startup[sd_dev_id]["is_ipv6"]:
-    #                 ip = f"[{ip}]"
-
-    #             sd_config["sd"]["address"] = sd_config["sd"]["address"].replace(ip, "127.0.0.1")
-                
-    #             # self._replace_string(sd_config, ip, loopback)
-
-    #             f.seek(0)
-    #             toml.dump(sd_config, f)
-    #             f.truncate()         
+                self.device_startup[sd_dev_id]["content"] += f'echo \'export SCION_DAEMON="{sd_config["sd"]["address"]}"\' >> /root/.bashrc \n'       
                 
     def _replace_string(self, obj, original_value, replace_value):
         for key, value in obj.items():
@@ -219,7 +196,7 @@ class KatharaLabGenerator(object):
             conf_dir = str(os.path.join(self.output_base, topo_id.base_dir(self.args.output_dir)))
             for dev_id in self.topoid_devices[topo_id]:
                 dest_dev_dir = os.path.join(self.output_base, os.path.join(self.lab_dir, dev_id))
-                dest_conf_dir = os.path.join(dest_dev_dir, "share/conf")
+                dest_conf_dir = os.path.join(dest_dev_dir, self.config_dir)
                 os.makedirs(dest_conf_dir)
 
                 symlink(f"{conf_dir}/certs", f"{dest_conf_dir}/certs", is_dir=True)
