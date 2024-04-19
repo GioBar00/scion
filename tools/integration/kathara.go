@@ -59,8 +59,7 @@ func katharize(bi *binaryIntegration) Integration {
 // StartServer starts a server and blocks until the ReadySignal is received on Stdout.
 func (ki *katharaIntegration) StartServer(ctx context.Context, dst *snet.UDPAddr) (Waiter, error) {
 	bi := *ki.binaryIntegration
-	temp := append([]string{EndhostID(dst), bi.cmd}, bi.serverArgs...)
-	temp[0] = "'" + temp[0]
+	temp := append([]string{EndhostID(dst), "'" + bi.cmd}, bi.serverArgs...)
 	temp[len(temp)-1] = temp[len(temp)-1] + "'"
 	bi.serverArgs = append(katharaArgs, temp...)
 	bi.cmd = katharaCmd
@@ -73,8 +72,7 @@ func (ki *katharaIntegration) StartServer(ctx context.Context, dst *snet.UDPAddr
 func (ki *katharaIntegration) StartClient(ctx context.Context,
 	src, dst *snet.UDPAddr) (*BinaryWaiter, error) {
 	bi := *ki.binaryIntegration
-	temp := append([]string{EndhostID(src), bi.cmd}, bi.clientArgs...)
-	temp[0] = "'" + temp[0]
+	temp := append([]string{EndhostID(src), "'" + bi.cmd}, bi.clientArgs...)
 	temp[len(temp)-1] = temp[len(temp)-1] + "'"
 	bi.clientArgs = append(katharaArgs, temp...)
 	bi.cmd = katharaCmd
@@ -87,9 +85,9 @@ func (ki *katharaIntegration) StartClient(ctx context.Context,
 // EndhostID returns the ID of the endhost container.
 func EndhostID(a *snet.UDPAddr) string {
 	ia := addr.FormatIA(a.IA, addr.WithFileSeparator())
-	envID, ok := os.LookupEnv(fmt.Sprintf("sd%s", strings.Replace(ia, "-", "_", -1)))
+	envID, ok := os.LookupEnv(fmt.Sprintf("sd%s", ))
 	if !ok {
-		return fmt.Sprintf("sd%s", ia)
+		return fmt.Sprintf("sd%s", strings.Replace(ia, "-", "_", -1))
 	}
 	return envID
 }

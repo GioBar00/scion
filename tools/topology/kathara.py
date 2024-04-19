@@ -101,6 +101,7 @@ class KatharaLabGenerator(object):
                 dev_id = dev_id.replace("_internal", "").replace("-", "_")
 
                 if dev_id.startswith("tester"):
+                    # FIXME: Add tester ip to endhost on right interface
                     continue
 
                 if dev_id not in self.devices_ifids:
