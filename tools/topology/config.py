@@ -79,6 +79,9 @@ class ConfigGenerator(object):
         if (self.args.kathara or self.args.megalos) and not self.args.docker:
             logging.info("Enabling docker for kathara/megalos lab creation")
             self.args.docker = True
+        if (self.args.kathara or self.args.megalos) and not self.args.image_tag:
+            logging.info("Setting default image tag for kathara/megalos lab creation to 'kathara'")
+            self.args.image_tag = "kathara"
         if self.args.sig and not self.args.docker:
             logging.critical("Cannot use sig without docker!")
             sys.exit(1)
