@@ -32,7 +32,10 @@ cmd_topodot() {
 
 start_scion() {
     echo "Running the network..."
-    if is_docker_be; then
+    if is_kathara_be; then
+        kathara lstart -d gen/kathara_lab
+        return 0
+    elif is_docker_be; then
         docker compose -f gen/scion-dc.yml up -d
         return 0
     else
@@ -95,7 +98,9 @@ run_teardown() {
 
 stop_scion() {
     echo "Terminating this run of the SCION infrastructure"
-    if is_docker_be; then
+    if is_kathara_be; then
+        kathara lclean -d gen/kathara_lab
+    elif is_docker_be; then
         ./tools/quiet ./tools/dc down
     else
         ./tools/quiet tools/supervisor.sh stop all # blocks until child processes are stopped
@@ -182,7 +187,11 @@ glob_match() {
 }
 
 is_docker_be() {
-    [ -f gen/scion-dc.yml ]
+    [ -f gen/scion-dc.yml ] && ! is_kathara_be
+}
+
+is_kathara_be() {
+    [ -f gen/kathara_lab/lab.conf ]
 }
 
 cmd_help() {

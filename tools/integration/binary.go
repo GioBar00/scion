@@ -101,7 +101,11 @@ func NewBinaryIntegration(name string, cmd string, clientArgs, serverArgs []stri
 		serverArgs: serverArgs,
 		logDir:     logDir,
 	}
-	return dockerize(bi)
+	res, ized := dockerize(bi).(*dockerIntegration)
+	if !ized {
+		return katharize(bi)
+	}
+	return res
 }
 
 func (bi *binaryIntegration) Name() string {
