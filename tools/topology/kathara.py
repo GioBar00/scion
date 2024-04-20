@@ -100,28 +100,43 @@ class KatharaLabGenerator(object):
             for dev_id, ip in desc.ip_net.items():
                 dev_id = dev_id.replace("_internal", "").replace("-", "_")
 
-                if dev_id.startswith("tester"):
-                    # FIXME: Add tester ip to endhost on right interface
-                    continue
+                if not dev_id.startswith("tester_"):
+                    if dev_id not in self.devices_ifids:
+                        self.devices_ifids[dev_id] = 0
+                    # Add collision domain to lab.conf
+                    gen_lines.append(f'{dev_id}[{self.devices_ifids[dev_id]}]="{coll_domain}"\n')
+                    if dev_id not in self.device_startup:
+                        self.device_startup[dev_id] = {
+                            "content": "",
+                            "is_ipv6": False,
+                            "ip": ip,
+                        }
+                    else:
+                        # Replace the tester_ IP address with the SD IP address
+                        self.device_startup[dev_id]["ip"] = ip
+                else:
+                    dev_id = dev_id.replace("tester_", "sd")
+                    # Force the tester to use the same interface as the SD
+                    if dev_id not in self.devices_ifids:
+                        self.devices_ifids[dev_id] = -1
+                    else:
+                        self.devices_ifids[dev_id] -= 1
 
-                if dev_id not in self.devices_ifids:
-                    self.devices_ifids[dev_id] = 0
-                # Add collision domain to lab.conf
-                gen_lines.append(f'{dev_id}[{self.devices_ifids[dev_id]}]="{coll_domain}"\n')
+                    if dev_id not in self.device_startup:
+                        self.device_startup[dev_id] = {
+                            "content": "",
+                            "is_ipv6": False,
+                            "ip": ip,
+                        }
 
-                if dev_id not in self.device_startup:
-                    self.device_startup[dev_id] = {
-                        "content": "",
-                        "is_ipv6": False,
-                        "ip": ip,
-                    }
+                ifid = self.devices_ifids[dev_id] if self.devices_ifids[dev_id] >= 0 else 0
                 # Add IP addresses to startup script
                 if ip.version == 4:
                     self.device_startup[dev_id][
-                        "content"] += f'ip addr add {ip} dev {self.if_name}{self.devices_ifids[dev_id]}\n'
+                        "content"] += f'ip addr add {ip} dev {self.if_name}{ifid}\n'
                 else:
                     self.device_startup[dev_id][
-                        "content"] += f'ip -6 addr add {ip} dev {self.if_name}{self.devices_ifids[dev_id]}\n'
+                        "content"] += f'ip -6 addr add {ip} dev {self.if_name}{ifid}\n'
                     # Add ipv6 to lab.conf
                     if not self.device_startup[dev_id]["is_ipv6"]:
                         gen_lines.append(f'{dev_id}[ipv6]=True\n')
