@@ -75,6 +75,8 @@ def build_tester_image_gen(name, base_image, layers = [], tars = []):
 
 def build_tester_image():
     build_tester_image_gen("tester", "@debian10//image", tars = [":tester_share"])
+
+def build_endhost_kathara_image():
     pkg_tar(
         name = "endhost_kathara_docker_files",
         srcs = ["//daemon/cmd/daemon"],

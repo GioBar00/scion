@@ -44,6 +44,8 @@ def scion_app_base_gen(name, base_image):
 
 def scion_app_base():
     scion_app_base_gen("app_base", "@debug_debian10//image")
+
+def scion_app_base_kathara():
     scion_app_base_gen("app_base_kathara", "@debian10//image")
     
 

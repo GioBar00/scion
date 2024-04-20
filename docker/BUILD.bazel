@@ -1,6 +1,6 @@
 load("@io_bazel_rules_docker//container:container.bzl", "container_bundle")
-load(":scion_app.bzl", "scion_app_base", "scion_app_images", "scion_app_images_kathara")
-load(":tester.bzl", "build_tester_image")
+load(":scion_app.bzl", "scion_app_base", "scion_app_base_kathara", "scion_app_images", "scion_app_images_kathara")
+load(":tester.bzl", "build_tester_image", "build_endhost_kathara_image")
 
 container_bundle(
     name = "prod",
@@ -33,8 +33,10 @@ container_bundle(
 )
 
 scion_app_base()
+scion_app_base_kathara()
 
 build_tester_image()
+build_endhost_kathara_image()
 
 scion_app_images(
     name = "posix_router",

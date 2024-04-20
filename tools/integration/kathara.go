@@ -59,10 +59,10 @@ func katharize(bi *binaryIntegration) Integration {
 // StartServer starts a server and blocks until the ReadySignal is received on Stdout.
 func (ki *katharaIntegration) StartServer(ctx context.Context, dst *snet.UDPAddr) (Waiter, error) {
 	bi := *ki.binaryIntegration
-
-	temp := append([]string{"'" + "bash -l -c \"export", fmt.Sprintf("%s=1", GoIntegrationEnv), "&&", bi.cmd}, bi.serverArgs...)
+	temp := append([]string{"bash -l -c \"export", fmt.Sprintf("%s=1", GoIntegrationEnv), "&&", bi.cmd}, bi.serverArgs...)
+	temp[len(temp)-1] = temp[len(temp)-1] + "\""
+	temp = []string{strings.Join(temp, " ")}
 	temp = append([]string{EndhostID(dst)}, temp...)
-	temp[len(temp)-1] = temp[len(temp)-1] + "\"'"
 	bi.serverArgs = append(katharaArgs, temp...)
 	bi.cmd = katharaCmd
 	log.Debug(fmt.Sprintf("Starting server for %s in kathara",
@@ -74,9 +74,10 @@ func (ki *katharaIntegration) StartServer(ctx context.Context, dst *snet.UDPAddr
 func (ki *katharaIntegration) StartClient(ctx context.Context,
 	src, dst *snet.UDPAddr) (*BinaryWaiter, error) {
 	bi := *ki.binaryIntegration
-	temp := append([]string{"'" + "bash -l -c \"export", fmt.Sprintf("%s=1", GoIntegrationEnv), "&&", bi.cmd}, bi.clientArgs...)
+	temp := append([]string{"bash -l -c \"export", fmt.Sprintf("%s=1", GoIntegrationEnv), "&&", bi.cmd}, bi.clientArgs...)
+	temp[len(temp)-1] = temp[len(temp)-1] + "\""
+	temp = []string{strings.Join(temp, " ")}
 	temp = append([]string{EndhostID(src)}, temp...)
-	temp[len(temp)-1] = temp[len(temp)-1] + "\"'"
 	bi.clientArgs = append(katharaArgs, temp...)
 	bi.cmd = katharaCmd
 	log.Debug(fmt.Sprintf("Starting client for %s in kathara",
