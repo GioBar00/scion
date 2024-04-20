@@ -85,7 +85,7 @@ func realMain() int {
 		clientArgs = append(clientArgs, "--features", features)
 		serverArgs = append(serverArgs, "--features", features)
 	}
-	if !*integration.Docker {
+	if !*integration.Docker && !*integration.Kathara {
 		clientArgs = append(clientArgs, "-sciond", integration.Daemon)
 		serverArgs = append(serverArgs, "-sciond", integration.Daemon)
 	}
