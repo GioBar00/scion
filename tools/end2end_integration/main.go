@@ -85,7 +85,7 @@ func realMain() int {
 		clientArgs = append(clientArgs, "--features", features)
 		serverArgs = append(serverArgs, "--features", features)
 	}
-	if !*integration.Docker && !*integration.Kathara {
+	if !*integration.Docker {
 		clientArgs = append(clientArgs, "-sciond", integration.Daemon)
 		serverArgs = append(serverArgs, "-sciond", integration.Daemon)
 	}
@@ -245,6 +245,8 @@ func runTests(in integration.Integration, pairs []integration.IAPair) error {
 				var tester string
 				if *integration.Docker {
 					tester = integration.TesterID(src)
+				} else if *integration.Kathara {
+					tester = integration.EndhostID(src)
 				}
 				logFile := fmt.Sprintf("%s/client_%s.log",
 					logDir(),
