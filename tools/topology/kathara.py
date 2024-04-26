@@ -137,10 +137,6 @@ class KatharaLabGenerator(object):
                 else:
                     self.device_startup[dev_id][
                         "content"] += f'ip -6 addr add {ip} dev {self.if_name}{ifid}\n'
-                    # Add ipv6 to lab.conf
-                    if not self.device_startup[dev_id]["is_ipv6"]:
-                        gen_lines.append(f'{dev_id}[ipv6]=True\n')
-                        self.device_startup[dev_id]["is_ipv6"] = True
 
                 self.devices_ifids[dev_id] += 1
 
