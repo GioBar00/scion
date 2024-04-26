@@ -80,7 +80,7 @@ func Run(ctx context.Context, cfg RunConfig) error {
 			log.Debug("Running docker command", "cmd", cmd)
 		} else {
 			args := append([]string{}, katharaArgs...)
-			args = append(args, cfg.Tester, joinCmds(cfg.Commands))
+			args = append(args, cfg.Tester, "bash -c \""+joinCmds(cfg.Commands)+"\"")
 			cmd = exec.CommandContext(ctx, "kathara", args...)
 			log.Debug("Running kathara command", "cmd", cmd)
 		}
