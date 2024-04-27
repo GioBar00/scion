@@ -72,7 +72,7 @@ class KatharaLabGenerator(object):
         self._add_container_images()
         self._add_enviroment_variables()
         self._add_commands()
-        # self._patch_sd_config()
+        self._patch_monitoring_config()
         self._write_lab()
 
     def _initiate_lab(self):
@@ -186,7 +186,24 @@ class KatharaLabGenerator(object):
             # Read SD config
             with open(sd_toml, "r") as f:
                 sd_config = toml.load(f)
-                self.device_startup[sd_dev_id]["content"] += f'echo \'export SCION_DAEMON="{sd_config["sd"]["address"]}"\' >> /root/.bashrc \n'       
+                self.device_startup[sd_dev_id]["content"] += f'echo \'export SCION_DAEMON="{sd_config["sd"]["address"]}"\' >> /root/.bashrc \n'
+
+    def _patch_monitoring_config(self):
+        for topo_id, _ in self.args.topo_dicts.items():
+            conf_dir = str(os.path.join(self.output_base, topo_id.base_dir(self.args.output_dir)))
+            for dev_id in self.topoid_devices[topo_id]:
+                if dev_id.startswith("sd"):
+                    conf_toml = f"{conf_dir}/sd.toml"
+                else:
+                    real_dev_id = self.get_real_device_id(dev_id)
+                    conf_toml = f"{conf_dir}/{real_dev_id}.toml"
+                
+                with open(conf_toml, "r+") as f:
+                    conf = toml.load(f)
+                    conf["metrics"]["prometheus"] = "0.0.0.0:" + str(conf["metrics"]["prometheus"]).split(":")[1]
+                    f.seek(0)
+                    f.write(toml.dumps(conf))
+                    f.truncate()
                 
     def _replace_string(self, obj, original_value, replace_value):
         for key, value in obj.items():
