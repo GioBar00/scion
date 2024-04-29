@@ -190,6 +190,7 @@ class KatharaLabGenerator(object):
 
     def _patch_monitoring_config(self):
         for topo_id, _ in self.args.topo_dicts.items():
+
             conf_dir = str(os.path.join(self.output_base, topo_id.base_dir(self.args.output_dir)))
             for dev_id in self.topoid_devices[topo_id]:
                 if dev_id.startswith("sd"):
@@ -201,9 +202,12 @@ class KatharaLabGenerator(object):
                 with open(conf_toml, "r+") as f:
                     conf = toml.load(f)
                     conf["metrics"]["prometheus"] = "0.0.0.0:" + str(conf["metrics"]["prometheus"]).split(":")[1]
+                    if "tracing" in conf:
+                        conf["tracing"]["agent"] = "jaeger.monitoring.svc.cluster.local:" + str(conf["tracing"]["agent"]).split(":")[1]
                     f.seek(0)
                     f.write(toml.dumps(conf))
                     f.truncate()
+                    
                 
     def _replace_string(self, obj, original_value, replace_value):
         for key, value in obj.items():
