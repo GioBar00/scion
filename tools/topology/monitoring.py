@@ -47,6 +47,7 @@ SIG_PROM_PORT = 30456
 DISP_PROM_PORT = 30441
 DEFAULT_BR_PROM_PORT = 30442
 MONITORING_DC_FILE = "monitoring-dc.yml"
+PODMONITOR_FILE = "podmonitor.yml"
 
 
 class MonitoringGenArgs(ArgsTopoDicts):
@@ -83,32 +84,72 @@ class MonitoringGenerator(object):
         self.docker_jaeger_dir = os.path.join(self.output_base, self.local_jaeger_dir)
 
     def generate(self):
-        config_dict = {}
-        for topo_id, as_topo in self.args.topo_dicts.items():
-            ele_dict = defaultdict(list)
-            for br_id, br_ele in as_topo["border_routers"].items():
-                a = prom_addr(br_ele["internal_addr"], DEFAULT_BR_PROM_PORT)
-                ele_dict["BorderRouters"].append(a)
-            for elem_id, elem in as_topo["control_service"].items():
-                a = prom_addr(elem["addr"], CS_PROM_PORT)
-                ele_dict["ControlService"].append(a)
-            if self.args.docker:
-                host_dispatcher = prom_addr_dispatcher(self.args.docker, topo_id,
-                                                       self.args.networks, DISP_PROM_PORT, "")
-                br_dispatcher = prom_addr_dispatcher(self.args.docker, topo_id,
-                                                     self.args.networks, DISP_PROM_PORT, "br")
-                ele_dict["Dispatcher"] = [host_dispatcher, br_dispatcher]
-            sd_prom_addr = '[%s]:%d' % (sciond_ip(self.args.docker, topo_id, self.args.networks),
-                                        SCIOND_PROM_PORT)
-            ele_dict["Sciond"].append(sd_prom_addr)
-            config_dict[topo_id] = ele_dict
-        self._write_config_files(config_dict)
-        self._write_dc_file()
-        self._write_disp_file()
+        if not self.args.megalos:
+            config_dict = {}
+            for topo_id, as_topo in self.args.topo_dicts.items():
+                ele_dict = defaultdict(list)
+                for br_id, br_ele in as_topo["border_routers"].items():
+                    a = prom_addr(br_ele["internal_addr"], DEFAULT_BR_PROM_PORT)
+                    ele_dict["BorderRouters"].append(a)
+                for elem_id, elem in as_topo["control_service"].items():
+                    a = prom_addr(elem["addr"], CS_PROM_PORT)
+                    ele_dict["ControlService"].append(a)
+                if self.args.docker:
+                    host_dispatcher = prom_addr_dispatcher(self.args.docker, topo_id,
+                                                           self.args.networks, DISP_PROM_PORT, "")
+                    br_dispatcher = prom_addr_dispatcher(self.args.docker, topo_id,
+                                                         self.args.networks, DISP_PROM_PORT, "br")
+                    ele_dict["Dispatcher"] = [host_dispatcher, br_dispatcher]
+                sd_prom_addr = '[%s]:%d' % (sciond_ip(self.args.docker, topo_id, self.args.networks),
+                                            SCIOND_PROM_PORT)
+                ele_dict["Sciond"].append(sd_prom_addr)
+                config_dict[topo_id] = ele_dict
+            self._write_config_files(config_dict)
+            self._write_dc_file()
+            self._write_disp_file()
 
-        # For yeager
-        os.makedirs(os.path.join(self.local_jaeger_dir, 'data'), exist_ok=True)
-        os.makedirs(os.path.join(self.local_jaeger_dir, 'key'), exist_ok=True)
+            # For yeager
+            os.makedirs(os.path.join(self.local_jaeger_dir, 'data'), exist_ok=True)
+            os.makedirs(os.path.join(self.local_jaeger_dir, 'key'), exist_ok=True)
+        else:
+            podmonitor_yml = yaml.dump(self._get_podmonitor_config(
+                self.JOB_NAMES["BorderRouters"].lower(), DEFAULT_BR_PROM_PORT), default_flow_style=False)
+            podmonitor_yml += "\n---\n\n"
+            podmonitor_yml += yaml.dump(self._get_podmonitor_config(
+                self.JOB_NAMES["ControlService"].lower(), CS_PROM_PORT), default_flow_style=False)
+            podmonitor_yml += "\n---\n\n"
+            podmonitor_yml += yaml.dump(self._get_podmonitor_config(
+                self.JOB_NAMES["Sciond"].lower(), SCIOND_PROM_PORT), default_flow_style=False)
+
+            write_file(os.path.join(self.args.output_dir, PODMONITOR_FILE), podmonitor_yml)
+
+    def _get_podmonitor_config(self, dev_type, port):
+        return {
+            'apiVersion': 'monitoring.coreos.com/v1',
+            'kind': 'PodMonitor',
+            'metadata': {
+                'labels': {
+                    'release': 'prometheus'
+                },
+                'name': f'podmonitor-scion-%s' % dev_type
+            },
+            'spec': {
+                'jobLabel': 'scion_dev',
+                'namespaceSelector': {
+                    'any': True
+                },
+                'podMetricsEndpoints': [{
+                    'interval': '1s',
+                    'targetPort': port
+                }],
+                'selector': {
+                    'matchLabels': {
+                        'app': 'kathara',
+                        'scion_dev': dev_type
+                    }
+                }
+            }
+        }
 
     def _write_config_files(self, config_dict):
         # For Prometheus

@@ -46,6 +46,14 @@ cmd_help() {
 
 cmd_start() {
     echo "Starting services..."
+    namespace=$(cmd_namespace)
+    pods=$(get_pods "$namespace")
+
+    for pod in $pods; do
+        # Label the pod to enable monitoring
+        dev=$(kubectl get pod "$pod" -n "$namespace" -o json | jq -r '.metadata.labels.name | .[:2]')
+        kubectl label -n "$namespace" pod "$pod" scion_dev="$dev"
+    done
 }
 
 cmd_stop() {
@@ -66,59 +74,20 @@ cmd_scion() {
 
 cmd_start-monitoring() {
     echo "Starting monitoring services..."
-    selected_namespace=$(cmd_namespace)
-    if [ -z "$selected_namespace" ]; then
-        echo "Running monitoring services failed."
-        echo "Deploy Kathara lab first."
-        exit 1
-    fi
-    deployments_names=$(get_deployments "$selected_namespace")
 
-    for deployment_name in $deployments_names; do
-        service_name=$(get_deployment_service_name "$selected_namespace" "$deployment_name")
-        if [ -z "$service_name" ]; then
-            echo "Failed to get service name for deployment: $deployment_name"
-            continue
-        fi
-        kubectl expose deployment "$deployment_name" -n "$selected_namespace" --port=30455 --name="$service_name"
-    done
-
-    # Update the service names in config files
-    # Loop through directories starting with "AS" under the base directory
-    for dir in gen/AS*/prometheus/; do
-        # Check if the directory exists
-        if [ -d "$dir" ]; then
-            echo "Processing files in directory: $dir"
-
-            # Use find to locate all files within the directory and its subdirectories
-            find "$dir" -type f -exec sed -i "s/<namespace>/$selected_namespace/g" {} +
-            
-            echo "Replacement complete for directory: $dir"
-        fi
-    done
-
-    # Create prometheus server
+    # Deploy PodMonitor
+    kubectl apply -f gen/podmonitor.yml -n monitoring
+    
 }
 
 cmd_stop-monitoring() {
     echo "Stopping monitoring services..."
-    selected_namespace=$(cmd_namespace)
-    if [ -z "$selected_namespace" ]; then
-        echo "Stopping monitoring services failed."
-        echo "Deploy Kathara lab first."
-        exit 1
-    fi
-
-    # Delete prometheus server
-
-    # Delete the services
-    services_names=$(get_services "$selected_namespace")
-    for service_name in $services_names; do
-        kubectl delete service "$service_name" -n "$selected_namespace"
-    done
+    
+    # Delete PodMonitor
+    kubectl delete -f gen/podmonitor.yml -n monitoring
 }
 
-get_services() {
+get_pods() {
     local namespace="$1"
 
     # Check if namespace is provided
@@ -127,42 +96,7 @@ get_services() {
         return 1
     fi
 
-    kubectl get services -n "$namespace" -l app=kathara -o=jsonpath='{.items[*].metadata.name}'
-}
-
-get_deployments() {
-    local namespace="$1"
-
-    # Check if namespace is provided
-    if [ -z "$namespace" ]; then
-        echo "Namespace not specified."
-        return 1
-    fi
-
-    kubectl get deployments -n db6hxe5novtclba8r4wpa -l app=kathara -o=jsonpath='{.items[*].metadata.name}'
-}
-
-get_deployment_service_name() {
-    local namespace="$1"
-    local deployment="$2"
-
-    # Check if namespace and deployment name are provided
-    if [ -z "$namespace" ] || [ -z "$deployment" ]; then
-        echo "Namespace or deployment name not specified."
-        return 1
-    fi
-
-    # Get the deployment details in JSON format
-    deployment_details=$(kubectl get deployment "$deployment" -n "$namespace" -o json)
-
-    # Extract the value of the label "name" from deployment details
-    deployment_name_label=$(echo "$deployment_details" | jq -r '.metadata.labels.name')
-
-    # Replace underscores with hyphens in the label value
-    deployment_name_label_modified=$(echo "$deployment_name_label" | tr '_' '-')
-
-    # Return the modified label value
-    echo "$deployment_name_label_modified"
+    kubectl get pods -n db6hxe5novtclba8r4wpa -l app=kathara -o=jsonpath='{.items[*].metadata.name}'
 }
 
 cmd_namespace() {

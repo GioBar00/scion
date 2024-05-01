@@ -171,6 +171,9 @@ class KatharaLabGenerator(object):
                 # Added to fix bind error with IPv6
                 self.device_startup[dev_id]["content"] += "sleep 2s\n"
 
+                # Add default route to eth0 to allow prometheus to scrape the metrics
+                self.device_startup[dev_id]["content"] += "ip route add default dev eth0\n"
+
                 if dev_id.startswith("br"):
                     self.device_startup[dev_id]["content"] += f'/app/router --config /{self.config_dir}/br.toml &\n'
                 elif dev_id.startswith("cs"):
@@ -235,9 +238,9 @@ class KatharaLabGenerator(object):
                 symlink(f"{conf_dir}/certs", f"{dest_conf_dir}/certs", is_dir=True)
                 symlink(f"{conf_dir}/crypto", f"{dest_conf_dir}/crypto", is_dir=True)
                 symlink(f"{conf_dir}/keys", f"{dest_conf_dir}/keys", is_dir=True)
-                symlink(f"{conf_dir}/prometheus", f"{dest_conf_dir}/prometheus", is_dir=True)
+                #symlink(f"{conf_dir}/prometheus", f"{dest_conf_dir}/prometheus", is_dir=True)
                 symlink(f"{conf_dir}/topology.json", f"{dest_conf_dir}/topology.json")
-                symlink(f"{conf_dir}/prometheus.yml", f"{dest_conf_dir}/prometheus.yml")
+                #symlink(f"{conf_dir}/prometheus.yml", f"{dest_conf_dir}/prometheus.yml")
 
                 if dev_id.startswith("sd"):
                     symlink(f"{conf_dir}/sd.toml", f"{dest_conf_dir}/sd.toml")

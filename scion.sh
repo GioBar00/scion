@@ -34,7 +34,7 @@ start_scion() {
     echo "Running the network..."
     if is_kathara_be; then
         kathara lstart -d gen/kathara_lab
-        ./tools/quiet ./tools/kctl namespace
+        ./tools/quiet ./tools/kctl start
         return 0
     elif is_docker_be; then
         docker compose -f gen/scion-dc.yml up -d
@@ -60,7 +60,7 @@ cmd_sciond-addr() {
 }
 
 cmd_start-monitoring() {
-    if is_docker_be && [ ! -f "gen/monitoring-dc.yml" ]; then
+    if is_docker_be && [ ! -f "gen/monitoring-dc.yml" ] || is_kathara_be && [ ! -f "gen/podmonitor.yml" ]; then
         return
     fi
     echo "Running monitoring..."
@@ -69,18 +69,21 @@ cmd_start-monitoring() {
         echo "Prometheus UI: http://localhost:9090"
         ./tools/quiet ./tools/dc monitoring up -d
     elif is_kathara_be; then
-        echo "Jaeger UI: http://localhost:16686"
-        echo "Prometheus UI: http://localhost:9090"
-        echo "TODO"
+        echo "Prometheus UI: kubectl -n monitoring port-forward svc/prometheus-operated 9090:9090"
+        ./tools/quiet ./tools/kctl start-monitoring
     fi
 }
 
 cmd_stop-monitoring() {
-    if is_docker_be && [ ! -f "gen/monitoring-dc.yml" ]; then
+    if is_docker_be && [ ! -f "gen/monitoring-dc.yml" ] || is_kathara_be && [ ! -f "gen/podmonitor.yml" ]; then
         return
     fi
     echo "Stopping monitoring..."
-    ./tools/quiet ./tools/dc monitoring down -v
+    if is_docker_be; then
+        ./tools/quiet ./tools/dc monitoring down
+    elif is_kathara_be; then
+        ./tools/quiet ./tools/kctl stop-monitoring
+    fi
 }
 
 cmd_mstart() {
@@ -106,6 +109,7 @@ run_teardown() {
 stop_scion() {
     echo "Terminating this run of the SCION infrastructure"
     if is_kathara_be; then
+        ./tools/quiet ./tools/kctl stop
         kathara lclean -d gen/kathara_lab
     elif is_docker_be; then
         ./tools/quiet ./tools/dc down
