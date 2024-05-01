@@ -87,16 +87,10 @@ class MonitoringGenerator(object):
         for topo_id, as_topo in self.args.topo_dicts.items():
             ele_dict = defaultdict(list)
             for br_id, br_ele in as_topo["border_routers"].items():
-                if self.args.megalos:
-                    a = br_id.replace("_", "-") + ".<namespace>.svc.cluster.local:%d" % DEFAULT_BR_PROM_PORT
-                else:
-                    a = prom_addr(br_ele["internal_addr"], DEFAULT_BR_PROM_PORT)
+                a = prom_addr(br_ele["internal_addr"], DEFAULT_BR_PROM_PORT)
                 ele_dict["BorderRouters"].append(a)
             for elem_id, elem in as_topo["control_service"].items():
-                if self.args.megalos:
-                    a = elem_id.replace("_", "-") + ".<namespace>.svc.cluster.local:%d" % CS_PROM_PORT
-                else:
-                    a = prom_addr(elem["addr"], CS_PROM_PORT)
+                a = prom_addr(elem["addr"], CS_PROM_PORT)
                 ele_dict["ControlService"].append(a)
             if self.args.docker:
                 host_dispatcher = prom_addr_dispatcher(self.args.docker, topo_id,
@@ -104,11 +98,8 @@ class MonitoringGenerator(object):
                 br_dispatcher = prom_addr_dispatcher(self.args.docker, topo_id,
                                                      self.args.networks, DISP_PROM_PORT, "br")
                 ele_dict["Dispatcher"] = [host_dispatcher, br_dispatcher]
-            if self.args.megalos:
-                sd_prom_addr = "sd%s.<namespace>.svc.cluster.local:%d" % (topo_id.file_fmt().replace("_", "-"), SCIOND_PROM_PORT)
-            else:
-                sd_prom_addr = '[%s]:%d' % (sciond_ip(self.args.docker, topo_id, self.args.networks),
-                                            SCIOND_PROM_PORT)
+            sd_prom_addr = '[%s]:%d' % (sciond_ip(self.args.docker, topo_id, self.args.networks),
+                                        SCIOND_PROM_PORT)
             ele_dict["Sciond"].append(sd_prom_addr)
             config_dict[topo_id] = ele_dict
         self._write_config_files(config_dict)
