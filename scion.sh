@@ -60,7 +60,7 @@ cmd_sciond-addr() {
 }
 
 cmd_start-monitoring() {
-    if is_docker_be && [ ! -f "gen/monitoring-dc.yml" ] || is_kathara_be && [ ! -f "gen/podmonitor.yml" ]; then
+    if is_docker_be && [ ! -f "gen/monitoring-dc.yml" ] || is_kathara_be && [ ! -f "gen/servicemonitor.yml" ]; then
         return
     fi
     echo "Running monitoring..."
@@ -75,7 +75,7 @@ cmd_start-monitoring() {
 }
 
 cmd_stop-monitoring() {
-    if is_docker_be && [ ! -f "gen/monitoring-dc.yml" ] || is_kathara_be && [ ! -f "gen/podmonitor.yml" ]; then
+    if is_docker_be && [ ! -f "gen/monitoring-dc.yml" ] || is_kathara_be && [ ! -f "gen/servicemonitor.yml" ]; then
         return
     fi
     echo "Stopping monitoring..."

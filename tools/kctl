@@ -47,17 +47,29 @@ cmd_help() {
 cmd_start() {
     echo "Starting services..."
     namespace=$(cmd_namespace)
-    pods=$(get_pods "$namespace")
 
-    for pod in $pods; do
-        # Label the pod to enable monitoring
-        dev=$(kubectl get pod "$pod" -n "$namespace" -o json | jq -r '.metadata.labels.name | .[:2]')
-        kubectl label -n "$namespace" pod "$pod" scion_dev="$dev"
+    if [ ! -f "gen/service-br-metrics.yml" ] || [ ! -f "gen/service-cs-metrics.yml" ] || [ ! -f "gen/service-sd-metrics.yml" ]; then
+        echo "Error: Service configuration file not found."
+        return 1
+    fi
+
+    devices=$(get_devices "$namespace")
+    for device_name in $devices; do
+        dev_type=${device_name:0:2}
+        service_template=$(cat "gen/service-$dev_type-metrics.yml")
+        patched_service=$(echo "$service_template" | sed "s/<name-label>/$device_name/g; s/<name>/${device_name//_/\-}/g")
+
+        echo "$patched_service" | kubectl apply -n "$namespace" -f - 
+
     done
+
 }
 
 cmd_stop() {
     echo "Stopping services..."
+    namespace=$(cmd_namespace)
+
+    kubectl delete service -n "$namespace" -l app=kathara
 }
 
 cmd_down() {
@@ -75,28 +87,22 @@ cmd_scion() {
 cmd_start-monitoring() {
     echo "Starting monitoring services..."
 
-    # Deploy PodMonitor
-    kubectl apply -f gen/podmonitor.yml -n monitoring
+    if [ ! -f "gen/servicemonitor.yml" ]; then
+        echo "Error: ServiceMonitor configuration file not found."
+        return 1
+    fi
+    kubectl apply -f gen/servicemonitor.yml -n monitoring
     
 }
 
 cmd_stop-monitoring() {
     echo "Stopping monitoring services..."
     
-    # Delete PodMonitor
-    kubectl delete -f gen/podmonitor.yml -n monitoring
-}
-
-get_pods() {
-    local namespace="$1"
-
-    # Check if namespace is provided
-    if [ -z "$namespace" ]; then
-        echo "Namespace not specified."
+    if [ ! -f "gen/servicemonitor.yml" ]; then
+        echo "Error: ServiceMonitor configuration file not found."
         return 1
     fi
-
-    kubectl get pods -n db6hxe5novtclba8r4wpa -l app=kathara -o=jsonpath='{.items[*].metadata.name}'
+    kubectl delete -f gen/servicemonitor.yml -n monitoring
 }
 
 cmd_namespace() {
@@ -120,6 +126,18 @@ cmd_namespace() {
 
     # Return the namespace
     echo "$namespace"
+}
+
+get_devices() {
+    local namespace="$1"
+
+    # Check if namespace is provided
+    if [ -z "$namespace" ]; then
+        echo "Namespace not specified."
+        return 1
+    fi
+
+    kubectl get deployments -n db6hxe5novtclba8r4wpa -l app=kathara -o=jsonpath='{.items[*].metadata.labels.name}'
 }
 
 cmd_collect_logs() {

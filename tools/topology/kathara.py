@@ -171,8 +171,9 @@ class KatharaLabGenerator(object):
                 # Added to fix bind error with IPv6
                 self.device_startup[dev_id]["content"] += "sleep 2s\n"
 
-                # Add default route to eth0 to allow prometheus to scrape the metrics
-                self.device_startup[dev_id]["content"] += "ip route add default dev eth0\n"
+                # if self.args.megalos:
+                #     # Add default route to eth0 to allow prometheus to scrape the metrics
+                #     self.device_startup[dev_id]["content"] += "ip route add 100.64.0.0/10 dev eth0\n"
 
                 if dev_id.startswith("br"):
                     self.device_startup[dev_id]["content"] += f'/app/router --config /{self.config_dir}/br.toml &\n'

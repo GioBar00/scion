@@ -47,7 +47,7 @@ SIG_PROM_PORT = 30456
 DISP_PROM_PORT = 30441
 DEFAULT_BR_PROM_PORT = 30442
 MONITORING_DC_FILE = "monitoring-dc.yml"
-PODMONITOR_FILE = "podmonitor.yml"
+SERVICEMONITOR_FILE = "servicemonitor.yml"
 
 
 class MonitoringGenArgs(ArgsTopoDicts):
@@ -112,41 +112,75 @@ class MonitoringGenerator(object):
             os.makedirs(os.path.join(self.local_jaeger_dir, 'data'), exist_ok=True)
             os.makedirs(os.path.join(self.local_jaeger_dir, 'key'), exist_ok=True)
         else:
-            podmonitor_yml = yaml.dump(self._get_podmonitor_config(
-                self.JOB_NAMES["BorderRouters"].lower(), DEFAULT_BR_PROM_PORT), default_flow_style=False)
-            podmonitor_yml += "\n---\n\n"
-            podmonitor_yml += yaml.dump(self._get_podmonitor_config(
-                self.JOB_NAMES["ControlService"].lower(), CS_PROM_PORT), default_flow_style=False)
-            podmonitor_yml += "\n---\n\n"
-            podmonitor_yml += yaml.dump(self._get_podmonitor_config(
-                self.JOB_NAMES["Sciond"].lower(), SCIOND_PROM_PORT), default_flow_style=False)
+            servicemonitor_yml = yaml.dump(self._get_servicemonitor_config(
+                self.JOB_NAMES["BorderRouters"].lower()), default_flow_style=False)
+            servicemonitor_yml += "\n---\n\n"
+            servicemonitor_yml += yaml.dump(self._get_servicemonitor_config(
+                self.JOB_NAMES["ControlService"].lower()), default_flow_style=False)
+            servicemonitor_yml += "\n---\n\n"
+            servicemonitor_yml += yaml.dump(self._get_servicemonitor_config(
+                self.JOB_NAMES["Sciond"].lower()), default_flow_style=False)
 
-            write_file(os.path.join(self.args.output_dir, PODMONITOR_FILE), podmonitor_yml)
+            write_file(os.path.join(self.args.output_dir, SERVICEMONITOR_FILE), servicemonitor_yml)
 
-    def _get_podmonitor_config(self, dev_type, port):
+            # Create service configs templates
+            for dev_type, port in [(self.JOB_NAMES["BorderRouters"].lower(), DEFAULT_BR_PROM_PORT), 
+                                   (self.JOB_NAMES["ControlService"].lower(), CS_PROM_PORT),
+                                   (self.JOB_NAMES["Sciond"].lower(), SCIOND_PROM_PORT)]:
+                service_yml = yaml.dump(self._get_service_config(dev_type, port), default_flow_style=False)
+                write_file(os.path.join(self.args.output_dir, f"service-{dev_type}-metrics.yml"), service_yml)
+    
+    def _get_servicemonitor_config(self, dev_type):
         return {
             'apiVersion': 'monitoring.coreos.com/v1',
-            'kind': 'PodMonitor',
+            'kind': 'ServiceMonitor',
             'metadata': {
                 'labels': {
                     'release': 'prometheus'
                 },
-                'name': f'podmonitor-scion-%s' % dev_type
+                'name': f'scion-%s' % dev_type
             },
             'spec': {
                 'jobLabel': 'scion_dev',
                 'namespaceSelector': {
                     'any': True
                 },
-                'podMetricsEndpoints': [{
+                'endpoints': [{
                     'interval': '1s',
-                    'targetPort': port
+                    'scheme': 'http',
+                    'path': '/metrics',
+                    'port': 'metrics',
                 }],
                 'selector': {
                     'matchLabels': {
                         'app': 'kathara',
                         'scion_dev': dev_type
                     }
+                }
+            }
+        }
+    
+    def _get_service_config(self, dev_type, port):
+        return {
+            'apiVersion': 'v1',
+            'kind': 'Service',
+            'metadata': {
+                'labels': {
+                    'app': 'kathara',
+                    'name': '<name-label>',
+                    'scion_dev': dev_type
+                },
+                'name': '<name>-metrics'
+            },
+            'spec': {
+                'ports': [{
+                    'name': 'metrics',
+                    'port': port,
+                    'targetPort': port
+                }],
+                'selector': {
+                    'app': 'kathara',
+                    'name': '<name-label>'
                 }
             }
         }
