@@ -76,7 +76,7 @@ class KatharaLabGenerator(object):
         self._write_lab()
 
     def _initiate_lab(self):
-        self.lab_conf += f'LAB_DESCRIPTION="SCION on Kathará Lab from topology {self.args.topo_config}"\n'
+        self.lab_conf += f'LAB_DESCRIPTION="MEGASCION -- SCION on Kathará Lab from topology {str(self.args.topo_config).split("/")[-1]}"\n'
         self.lab_conf += f'LAB_AUTHOR="ETH Zurich"\n'
         self.lab_conf += f'LAB_VERSION=1.0\n'
         self.lab_conf += f'LAB_WEB="https://github.com/scionproto/scion"\n'
@@ -207,7 +207,7 @@ class KatharaLabGenerator(object):
                     conf = toml.load(f)
                     conf["metrics"]["prometheus"] = "0.0.0.0:" + str(conf["metrics"]["prometheus"]).split(":")[1]
                     if "tracing" in conf:
-                        conf["tracing"]["agent"] = "jaeger.monitoring.svc.cluster.local:" + str(conf["tracing"]["agent"]).split(":")[1]
+                        conf["tracing"]["agent"] = "jaeger-agent.monitoring.svc.cluster.local:" + str(conf["tracing"]["agent"]).split(":")[1]
                     f.seek(0)
                     f.write(toml.dumps(conf))
                     f.truncate()

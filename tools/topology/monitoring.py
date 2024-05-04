@@ -48,6 +48,7 @@ DISP_PROM_PORT = 30441
 DEFAULT_BR_PROM_PORT = 30442
 MONITORING_DC_FILE = "monitoring-dc.yml"
 SERVICEMONITOR_FILE = "servicemonitor.yml"
+JEAGER_VALUES_FILE = "jaeger-values.yml"
 
 
 class MonitoringGenArgs(ArgsTopoDicts):
@@ -114,22 +115,47 @@ class MonitoringGenerator(object):
         else:
             servicemonitor_yml = yaml.dump(self._get_servicemonitor_config(
                 self.JOB_NAMES["BorderRouters"].lower()), default_flow_style=False)
-            servicemonitor_yml += "\n---\n\n"
+            servicemonitor_yml += "\n---\n"
             servicemonitor_yml += yaml.dump(self._get_servicemonitor_config(
                 self.JOB_NAMES["ControlService"].lower()), default_flow_style=False)
-            servicemonitor_yml += "\n---\n\n"
+            servicemonitor_yml += "\n---\n"
             servicemonitor_yml += yaml.dump(self._get_servicemonitor_config(
                 self.JOB_NAMES["Sciond"].lower()), default_flow_style=False)
 
             write_file(os.path.join(self.args.output_dir, SERVICEMONITOR_FILE), servicemonitor_yml)
 
             # Create service configs templates
-            for dev_type, port in [(self.JOB_NAMES["BorderRouters"].lower(), DEFAULT_BR_PROM_PORT), 
+            for dev_type, port in [(self.JOB_NAMES["BorderRouters"].lower(), DEFAULT_BR_PROM_PORT),
                                    (self.JOB_NAMES["ControlService"].lower(), CS_PROM_PORT),
                                    (self.JOB_NAMES["Sciond"].lower(), SCIOND_PROM_PORT)]:
-                service_yml = yaml.dump(self._get_service_config(dev_type, port), default_flow_style=False)
-                write_file(os.path.join(self.args.output_dir, f"service-{dev_type}-metrics.yml"), service_yml)
-    
+                service_yml = yaml.dump(self._get_service_config(
+                    dev_type, port), default_flow_style=False)
+                write_file(os.path.join(self.args.output_dir,
+                           f"service-{dev_type}-metrics.yml"), service_yml)
+
+            jeager_values_yml = yaml.dump({
+                'provisionDataStore': {
+                    'cassandra': False
+                },
+                'allInOne': {
+                    'enabled': True,
+                },
+                'storage': {
+                    'type': 'memory',
+                },
+                'agent': {
+                    'enabled': False,
+                },
+                'collector': {
+                    'enabled': False,
+                },
+                'query': {
+                    'enabled': False,
+                },
+            }, default_flow_style=False)
+
+            write_file(os.path.join(self.args.output_dir, JEAGER_VALUES_FILE), jeager_values_yml)
+
     def _get_servicemonitor_config(self, dev_type):
         return {
             'apiVersion': 'monitoring.coreos.com/v1',
@@ -159,7 +185,7 @@ class MonitoringGenerator(object):
                 }
             }
         }
-    
+
     def _get_service_config(self, dev_type, port):
         return {
             'apiVersion': 'v1',
