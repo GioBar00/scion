@@ -93,7 +93,10 @@ class ConfigGenerator(object):
         Configure default network.
         """
         defaults = self.topo_config.get("defaults", {})
-        self.subnet_gen4 = SubnetGenerator(DEFAULT_NETWORK, self.args.docker)
+        if network:
+            self.subnet_gen4 = SubnetGenerator(network, self.args.docker)
+        else:
+            self.subnet_gen4 = SubnetGenerator(DEFAULT_NETWORK, self.args.docker)
         self.subnet_gen6 = SubnetGenerator(DEFAULT6_NETWORK, self.args.docker)
         self.default_mtu = defaults.get("mtu", DEFAULT_MTU)
         self.dispatched_ports = defaults.get("dispatched_ports", DEFAULT_DISPATCHED_PORTS)

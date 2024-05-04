@@ -97,8 +97,6 @@ cmd_start-monitoring() {
     fi
     kubectl apply -f gen/servicemonitor.yml -n monitoring
     helm upgrade --install jaeger jaegertracing/jaeger --namespace monitoring --values gen/jaeger-values.yml
-    kubectl expose deployment jaeger -n monitoring --name jaeger-dash --port 16686
-    kubectl expose deployment jaeger -n monitoring --name jaeger --port 6831 --protocol UDP
 }
 
 cmd_stop-monitoring() {
