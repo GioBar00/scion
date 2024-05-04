@@ -69,6 +69,7 @@ cmd_start-monitoring() {
         echo "Prometheus UI: http://localhost:9090"
         ./tools/quiet ./tools/dc monitoring up -d
     elif is_kathara_be; then
+        echo "Jaeger UI: kubectl -n monitoring port-forward svc/jaeger-query 16686:16686"
         echo "Prometheus UI: kubectl -n monitoring port-forward svc/prometheus-operated 9090:9090"
         ./tools/quiet ./tools/kctl start-monitoring
     fi

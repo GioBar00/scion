@@ -91,12 +91,12 @@ cmd_start-monitoring() {
         echo "Error: ServiceMonitor configuration file not found."
         return 1
     fi
-    if [ ! -f "gen/jeager-values.yml" ]; then
+    if [ ! -f "gen/jaeger-values.yml" ]; then
         echo "Error: Jaeger configuration file not found."
         return 1
     fi
     kubectl apply -f gen/servicemonitor.yml -n monitoring
-    helm upgrade --install jaeger jaegertracing/jaeger --namespace monitoring --values gen/jeager-values.yml
+    helm upgrade --install jaeger jaegertracing/jaeger --namespace monitoring --values gen/jaeger-values.yml
     kubectl expose deployment jaeger -n monitoring --name jaeger-dash --port 16686
     kubectl expose deployment jaeger -n monitoring --name jaeger --port 6831 --protocol UDP
 }
