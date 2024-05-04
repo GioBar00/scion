@@ -75,7 +75,6 @@ func (cfg *Config) ConfigName() string {
 
 // Dispatcher contains the dispatcher specific config.
 type Dispatcher struct {
-	config.NoDefaulter
 	// ID is the SCION element ID of the shim dispatcher.
 	ID string `toml:"id,omitempty"`
 	// IsDispatcher is the flag indicating whether the shim acts as dispatcher for packets arriving
@@ -86,8 +85,18 @@ type Dispatcher struct {
 	// mapped services, e.g., the shim dispatcher runs on the same host,
 	//  where the CS for the local IA runs.
 	ServiceAddresses map[addr.Addr]netip.AddrPort `toml:"service_addresses,omitempty"`
-	// UnderlayAddr is the UDP address where the shim dispatcher listens on (default [::]:30041)
-	UnderlayAddr netip.AddrPort `toml:"underlay_addr,omitempty"`
+	// UnderlayAddr is the IP address where the shim dispatcher listens on (default ::).
+	UnderlayAddr *netip.Addr `toml:"underlay_addr,omitempty"`
+}
+
+func (cfg *Dispatcher) InitDefaults() {
+	if cfg.UnderlayAddr == nil {
+		addr, err := netip.ParseAddr("::")
+		if err != nil {
+			panic(err)
+		}
+		cfg.UnderlayAddr = &addr
+	}
 }
 
 func (cfg *Dispatcher) Validate() error {
