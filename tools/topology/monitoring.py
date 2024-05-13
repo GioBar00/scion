@@ -133,27 +133,6 @@ class MonitoringGenerator(object):
                 write_file(os.path.join(self.args.output_dir,
                            f"service-{dev_type}-metrics.yml"), service_yml)
 
-            # jeager_values_yml = yaml.dump({
-            #     'provisionDataStore': {
-            #         'cassandra': False
-            #     },
-            #     'allInOne': {
-            #         'enabled': True,
-            #     },
-            #     'storage': {
-            #         'type': 'memory',
-            #     },
-            #     'agent': {
-            #         'enabled': False,
-            #     },
-            #     'collector': {
-            #         'enabled': False,
-            #     },
-            #     'query': {
-            #         'enabled': False,
-            #     },
-            # }, default_flow_style=False)
-
             jeager_values_yml = yaml.dump({
                 'environmentVariables': {
                     'SPAN_STORAGE_TYPE': 'memory'

@@ -4,6 +4,7 @@ from typing import Mapping
 import string
 # External packages
 import toml
+import json
 
 from topology.defines import KATHARA_GEN_PATH
 # SCION
@@ -16,6 +17,9 @@ from topology.common import (
 from topology.net import NetworkDescription, IPNetwork
 
 KATHARA_LAB_CONF = 'lab.conf'
+SCMP_PATH_PROBE_TARGETS_FILE = "scmp_path_probe_targets.json"
+SCMP_PATH_PROBE_SCRIPT_FILE = "scmp_path_probe.py"
+CRON_SCRIPT_FILE = "cron.py"
 
 
 class KatharaLabGenArgs(ArgsTopoDicts):
@@ -50,6 +54,8 @@ class KatharaLabGenerator(object):
         self.lab_dir = str(os.path.join(self.args.output_dir, KATHARA_GEN_PATH))
         self.config_dir = "etc/scion"
 
+        self._init_file_content()
+
     def get_real_device_id(self, dev_id):
         real_dev_id = dev_id.replace("_", "-", 1)
         idx = real_dev_id.rfind("_")
@@ -73,6 +79,7 @@ class KatharaLabGenerator(object):
         self._add_enviroment_variables()
         self._add_commands()
         self._patch_monitoring_config()
+        self._expose_paths_metrics()
         self._write_lab()
 
     def _initiate_lab(self):
@@ -180,6 +187,7 @@ class KatharaLabGenerator(object):
                 elif dev_id.startswith("cs"):
                     self.device_startup[dev_id]["content"] += f'/app/control --config /{self.config_dir}/cs.toml &\n'
                 elif dev_id.startswith("sd"):
+                    self.device_startup[dev_id]["content"] += f'python3 /{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
                     self.device_startup[dev_id]["content"] += f'/app/daemon --config /{self.config_dir}/sd.toml &\n'
 
     def _add_enviroment_variables(self):
@@ -211,6 +219,16 @@ class KatharaLabGenerator(object):
                     f.seek(0)
                     f.write(toml.dumps(conf))
                     f.truncate()
+
+    def _expose_paths_metrics(self):
+        
+        write_file(os.path.join(os.path.join(self.output_base, self.args.output_dir), CRON_SCRIPT_FILE), self._cron_content)
+        write_file(os.path.join(os.path.join(self.output_base, self.args.output_dir), SCMP_PATH_PROBE_SCRIPT_FILE), self._scmp_path_probe_content)
+
+        for topo_id, _ in self.args.topo_dicts.items():
+            conf_dir = str(os.path.join(self.output_base, topo_id.base_dir(self.args.output_dir)))
+            scmp_path_probe_targets_json = [str(t) for t, _ in self.args.topo_dicts.items() if t != topo_id]
+            write_file(os.path.join(conf_dir, SCMP_PATH_PROBE_TARGETS_FILE), json.dumps(scmp_path_probe_targets_json))
                     
                 
     def _replace_string(self, obj, original_value, replace_value):
@@ -239,14 +257,104 @@ class KatharaLabGenerator(object):
                 symlink(f"{conf_dir}/certs", f"{dest_conf_dir}/certs", is_dir=True)
                 symlink(f"{conf_dir}/crypto", f"{dest_conf_dir}/crypto", is_dir=True)
                 symlink(f"{conf_dir}/keys", f"{dest_conf_dir}/keys", is_dir=True)
-                #symlink(f"{conf_dir}/prometheus", f"{dest_conf_dir}/prometheus", is_dir=True)
                 symlink(f"{conf_dir}/topology.json", f"{dest_conf_dir}/topology.json")
-                #symlink(f"{conf_dir}/prometheus.yml", f"{dest_conf_dir}/prometheus.yml")
 
                 if dev_id.startswith("sd"):
                     symlink(f"{conf_dir}/sd.toml", f"{dest_conf_dir}/sd.toml")
+                    symlink(f"{conf_dir}/{SCMP_PATH_PROBE_TARGETS_FILE}", f"{dest_conf_dir}/{SCMP_PATH_PROBE_TARGETS_FILE}")
+                    symlink(f"{str(os.path.join(self.output_base, self.args.output_dir))}/{CRON_SCRIPT_FILE}", f"{dest_conf_dir}/{CRON_SCRIPT_FILE}")
+                    symlink(f"{str(os.path.join(self.output_base, self.args.output_dir))}/{SCMP_PATH_PROBE_SCRIPT_FILE}", f"{dest_conf_dir}/{SCMP_PATH_PROBE_SCRIPT_FILE}")
                 else:
                     real_dev_id = self.get_real_device_id(dev_id)
                     symlink(f"{conf_dir}/{real_dev_id}.toml", f"{dest_conf_dir}/{real_dev_id[:2]}.toml")
 
     
+    def _init_file_content(self):
+        self._cron_content = """import time, os
+while True:
+    os.system("bash -l -c 'python3 /etc/scion/scmp_path_probe.py' > /shared/$(hostname).prom")
+    time.sleep(30)"""
+        
+        self._scmp_path_probe_content = """#!/usr/bin/env python3
+# Copyright 2021 ETH Zurich
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import json
+import pathlib
+import subprocess
+
+# File to load targets for probing
+targets_file = '/etc/scion/scmp_path_probe_targets.json'
+# AS topo file path
+topo_path = '/etc/scion/topology.json'
+
+
+def main():
+    local_ia = json.loads(pathlib.Path(topo_path).read_text())['isd_as']
+    probe_targets = load_targets()
+    # Metric header
+    print("# HELP scionlab_scion_paths Number of SCION paths to destination AS")
+    print("# TYPE scionlab_scion_paths gauge")
+    for target_ia in probe_targets:
+        try:
+            raw_result = probe(target_ia)
+        except subprocess.CalledProcessError:
+            # Ignore failures, since we only count successful queries
+            continue
+        try:
+            result = json.loads(raw_result.stdout)
+            output_metrics(local_ia, target_ia, result)
+        except json.JSONDecodeError:
+            # invalid result
+            continue
+    return
+
+
+def probe(target):
+    return subprocess.run(['./bin/scion', 'showpaths', target, '--format=json'],
+                          stdout=subprocess.PIPE, encoding='utf-8', check=True)
+
+
+def load_targets():
+    return json.loads(pathlib.Path(targets_file).read_text())
+
+
+def output_metrics(local_ia, target_ia, results):
+    # Count all alive paths for current src-dst AS pair
+    paths = results.get('paths', [])
+    alive_paths = sum(1 for p in paths if p.get('status', None) == 'alive')
+    dead_paths = len(paths) - alive_paths
+
+    isd, as_ = local_ia.split('-')
+    dst_isd, dst_as = target_ia.split('-')
+    base_labels = {
+        "isd": isd,
+        "as": as_,
+        "dst_isd": dst_isd,
+        "dst_as": dst_as,
+    }
+    print(fmt_metric("scionlab_scion_paths", {
+          **base_labels, "status": "alive"}, alive_paths))
+    print(fmt_metric("scionlab_scion_paths", {
+          **base_labels, "status": "dead"}, dead_paths))
+
+
+def fmt_metric(metric, labels, value):
+    labels_fmted = ",".join("%s=\\"%s\\"" % (k, v) for k, v in labels.items())
+    return "%s{%s} %s" % (metric, labels_fmted, value)
+
+
+if __name__ == "__main__":
+    main()
+"""
