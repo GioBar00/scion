@@ -69,7 +69,31 @@ cmd_stop() {
     echo "Stopping services..."
     namespace=$(cmd_namespace)
 
+    if [ -z "$namespace" ]; then
+        echo "Error: Namespace not found."
+        return 1
+    fi
+
+    devices=$(get_devices "$namespace")
+    for device_name in $devices; do
+        dev_type=${device_name:0:2}
+        if [ "$dev_type" == "sd" ]; then
+            kathara exec -d gen/kathara_lab $device_name "pkill -f cron.sh"
+        fi
+    done
+    for device_name in $devices; do
+        dev_type=${device_name:0:2}
+        if [ "$dev_type" == "sd" ]; then
+            kathara exec -d gen/kathara_lab $device_name "bash -l -c 'rm -f /shared/kathara-*.prom'"
+        fi
+    done
+
     kubectl delete service -n "$namespace" -l app=kathara
+
+    namespace_file="gen/namespace"
+    if [ -f "$namespace_file" ]; then
+        rm "$namespace_file"
+    fi
 }
 
 cmd_down() {
@@ -106,6 +130,7 @@ cmd_stop-monitoring() {
         echo "Error: ServiceMonitor configuration file not found."
         return 1
     fi
+
     kubectl delete -f gen/servicemonitor.yml -n monitoring
     helm uninstall jaeger-all-in-one -n monitoring
 }
@@ -119,6 +144,11 @@ cmd_namespace() {
         namespace=$(cat "$namespace_file")
     else
         # If the namespace file does not exist, retrieve the namespace and save it to the file
+        namespace=$(kubectl get namespace -l=$label_selector)
+        if [ -z "$namespace" ]; then
+            echo "Error: Kathara lab not running. Nothing to do."
+            return 1
+        fi
         namespace=$(kubectl get namespace -l=$label_selector -o=jsonpath='{.items[0].metadata.name}')
         
         if [ -n "$namespace" ]; then

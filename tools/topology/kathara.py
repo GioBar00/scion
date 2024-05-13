@@ -19,7 +19,7 @@ from topology.net import NetworkDescription, IPNetwork
 KATHARA_LAB_CONF = 'lab.conf'
 SCMP_PATH_PROBE_TARGETS_FILE = "scmp_path_probe_targets.json"
 SCMP_PATH_PROBE_SCRIPT_FILE = "scmp_path_probe.py"
-CRON_SCRIPT_FILE = "cron.py"
+CRON_SCRIPT_FILE = "cron.sh"
 
 
 class KatharaLabGenArgs(ArgsTopoDicts):
@@ -187,7 +187,8 @@ class KatharaLabGenerator(object):
                 elif dev_id.startswith("cs"):
                     self.device_startup[dev_id]["content"] += f'/app/control --config /{self.config_dir}/cs.toml &\n'
                 elif dev_id.startswith("sd"):
-                    self.device_startup[dev_id]["content"] += f'python3 /{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
+                    self.device_startup[dev_id]["content"] += f'chmod +x /{self.config_dir}/{CRON_SCRIPT_FILE}\n'
+                    self.device_startup[dev_id]["content"] += f'/{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
                     self.device_startup[dev_id]["content"] += f'/app/daemon --config /{self.config_dir}/sd.toml &\n'
 
     def _add_enviroment_variables(self):
@@ -270,10 +271,21 @@ class KatharaLabGenerator(object):
 
     
     def _init_file_content(self):
-        self._cron_content = """import time, os
-while True:
-    os.system("bash -l -c 'python3 /etc/scion/scmp_path_probe.py' > /shared/$(hostname).prom")
-    time.sleep(30)"""
+#         self._cron_content = """import time, os
+# while True:
+#     os.system("bash -l -c 'python3 /etc/scion/scmp_path_probe.py' > /shared/$(hostname).prom")
+#     time.sleep(30)"""
+        self._cron_content = """#!/bin/bash
+
+PATH_METRICS_FILE=/shared/$(hostname).prom
+touch "$PATH_METRICS_FILE"
+
+trap "rm -f $PATH_METRICS_FILE" EXIT
+
+while true; do
+    bash -l -c "python3 /etc/scion/scmp_path_probe.py" > "$PATH_METRICS_FILE"
+    sleep 30s
+done"""
         
         self._scmp_path_probe_content = """#!/usr/bin/env python3
 # Copyright 2021 ETH Zurich
