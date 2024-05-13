@@ -133,25 +133,39 @@ class MonitoringGenerator(object):
                 write_file(os.path.join(self.args.output_dir,
                            f"service-{dev_type}-metrics.yml"), service_yml)
 
+            # jeager_values_yml = yaml.dump({
+            #     'provisionDataStore': {
+            #         'cassandra': False
+            #     },
+            #     'allInOne': {
+            #         'enabled': True,
+            #     },
+            #     'storage': {
+            #         'type': 'memory',
+            #     },
+            #     'agent': {
+            #         'enabled': False,
+            #     },
+            #     'collector': {
+            #         'enabled': False,
+            #     },
+            #     'query': {
+            #         'enabled': False,
+            #     },
+            # }, default_flow_style=False)
+
             jeager_values_yml = yaml.dump({
-                'provisionDataStore': {
-                    'cassandra': False
+                'environmentVariables': {
+                    'SPAN_STORAGE_TYPE': 'memory'
                 },
-                'allInOne': {
-                    'enabled': True,
+                'nodeSelector': {
+                    'kops.k8s.io/instancegroup': 'monitor',
                 },
-                'storage': {
-                    'type': 'memory',
-                },
-                'agent': {
-                    'enabled': False,
-                },
-                'collector': {
-                    'enabled': False,
-                },
-                'query': {
-                    'enabled': False,
-                },
+                'tolerations': [{
+                    'key': 'role',
+                    'operator': 'Equal',
+                    'value': 'critical',
+                }],
             }, default_flow_style=False)
 
             write_file(os.path.join(self.args.output_dir, JEAGER_VALUES_FILE), jeager_values_yml)

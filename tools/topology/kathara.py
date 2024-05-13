@@ -205,9 +205,9 @@ class KatharaLabGenerator(object):
                 
                 with open(conf_toml, "r+") as f:
                     conf = toml.load(f)
-                    conf["metrics"]["prometheus"] = "0.0.0.0:" + str(conf["metrics"]["prometheus"]).split(":")[1]
+                    conf["metrics"]["prometheus"] = "0.0.0.0:" + str(conf["metrics"]["prometheus"]).split(":")[-1]
                     if "tracing" in conf:
-                        conf["tracing"]["agent"] = "jaeger-agent.monitoring.svc.cluster.local:" + str(conf["tracing"]["agent"]).split(":")[1]
+                        conf["tracing"]["agent"] = "jaeger-all-in-one.monitoring.svc.cluster.local:" + str(conf["tracing"]["agent"]).split(":")[1]
                     f.seek(0)
                     f.write(toml.dumps(conf))
                     f.truncate()

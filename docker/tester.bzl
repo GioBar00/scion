@@ -5,23 +5,6 @@ load("@io_bazel_rules_docker//docker/package_managers:install_pkgs.bzl", "instal
 load("@debian_buster_amd64//debs:deb_packages.bzl", packages = "debian_buster_amd64")
 
 def build_tester_image_gen(name, base_image, layers = [], tars = []):
-    download_pkgs(
-        name = "%s_pkgs" % name,
-        image_tar = base_image,
-        packages = [
-            "bridge-utils",
-            "iperf3",
-            "iptables",
-            "netcat-openbsd",
-            "openssh-server",
-            "openssh-client",
-            "procps",
-            "telnet",
-            "tshark",
-            "wget",
-        ],
-    )
-
     install_pkgs(
         name = "%s_pkgs_image" % name,
         image_tar = base_image,
@@ -74,6 +57,22 @@ def build_tester_image_gen(name, base_image, layers = [], tars = []):
     )
 
 def build_tester_image():
+    download_pkgs(
+        name = "tester_pkgs",
+        image_tar = "@debian10//image",
+        packages = [
+            "bridge-utils",
+            "iperf3",
+            "iptables",
+            "netcat-openbsd",
+            "openssh-server",
+            "openssh-client",
+            "procps",
+            "telnet",
+            "tshark",
+            "wget",
+        ],
+    )
     build_tester_image_gen("tester", "@debian10//image", tars = [":tester_share"])
 
 def build_endhost_kathara_image():
@@ -82,6 +81,23 @@ def build_endhost_kathara_image():
         srcs = ["//daemon/cmd/daemon"],
         package_dir = "/app",
         mode = "0755",
+    )
+    download_pkgs(
+        name = "endhost_kathara_pkgs",
+        image_tar = "@debian10//image",
+        packages = [
+            "python3",
+            "bridge-utils",
+            "iperf3",
+            "iptables",
+            "netcat-openbsd",
+            "openssh-server",
+            "openssh-client",
+            "procps",
+            "telnet",
+            "tshark",
+            "wget",
+        ],
     )
     build_tester_image_gen("endhost_kathara", "@debian10//image", [":app_base_kathara_share_dirs_layer"], ["endhost_kathara_share", "endhost_kathara_docker_files"])
     

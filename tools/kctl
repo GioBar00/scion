@@ -96,7 +96,7 @@ cmd_start-monitoring() {
         return 1
     fi
     kubectl apply -f gen/servicemonitor.yml -n monitoring
-    helm upgrade --install jaeger jaegertracing/jaeger --namespace monitoring --values gen/jaeger-values.yml
+    helm upgrade --install jaeger-all-in-one jaeger-all-in-one/jaeger-all-in-one --namespace monitoring --values gen/jaeger-values.yml
 }
 
 cmd_stop-monitoring() {
@@ -107,7 +107,7 @@ cmd_stop-monitoring() {
         return 1
     fi
     kubectl delete -f gen/servicemonitor.yml -n monitoring
-    helm uninstall jaeger -n monitoring
+    helm uninstall jaeger-all-in-one -n monitoring
 }
 
 cmd_namespace() {
