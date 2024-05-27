@@ -145,6 +145,9 @@ class MonitoringGenerator(object):
                     'operator': 'Equal',
                     'value': 'critical',
                 }],
+                'volume': {
+                    'enabled': False,
+                }
             }, default_flow_style=False)
 
             write_file(os.path.join(self.args.output_dir, JEAGER_VALUES_FILE), jeager_values_yml)
@@ -165,7 +168,7 @@ class MonitoringGenerator(object):
                     'any': True
                 },
                 'endpoints': [{
-                    'interval': '1s',
+                    'interval': '5s',
                     'scheme': 'http',
                     'path': '/metrics',
                     'port': 'metrics',
