@@ -38,6 +38,7 @@ from topology.util import write_file
 from topology.cert import CertGenArgs, CertGenerator
 from topology.common import ArgsBase
 from topology.docker import DockerGenArgs, DockerGenerator
+from topology.kathara import KatharaLabGenerator, KatharaLabGenArgs
 from topology.go import GoGenArgs, GoGenerator
 from topology.net import (
     NetworkDescription,
@@ -75,6 +76,14 @@ class ConfigGenerator(object):
         if self.args.sig and not self.args.docker:
             logging.critical("Cannot use sig without docker!")
             sys.exit(1)
+        if not self.args.image_tag:
+            if self.args.kathara:
+                self.args.image_tag = "kathara"
+            else:
+                self.args.image_tag = "latest"
+        # If kathara is set, docker is also set
+        if self.args.kathara:
+            self.args.docker = True
         self.default_mtu = None
         self._read_defaults()
 
@@ -118,6 +127,8 @@ class ConfigGenerator(object):
             self._generate_supervisor(topo_dicts)
         self._generate_monitoring_conf(topo_dicts)
         self._generate_certs_trcs(topo_dicts)
+        if self.args.kathara:
+            self._generate_kathara(topo_dicts)
 
     def _generate_certs_trcs(self, topo_dicts):
         certgen = CertGenerator(self._cert_args())
@@ -161,6 +172,14 @@ class ConfigGenerator(object):
 
     def _docker_args(self, topo_dicts):
         return DockerGenArgs(self.args, topo_dicts, self.all_networks)
+    
+    def _generate_kathara(self, topo_dicts):
+        args = self._kathara_args(topo_dicts)
+        kathara_gen = KatharaLabGenerator(args)
+        kathara_gen.generate_lab()
+
+    def _kathara_args(self, topo_dicts):
+        return KatharaLabGenArgs(self.args, topo_dicts, self.networks)
 
     def _generate_monitoring_conf(self, topo_dicts):
         args = self._monitoring_args(topo_dicts)
