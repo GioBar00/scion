@@ -178,7 +178,12 @@ class MonitoringGenerator(object):
                         'app': 'kathara',
                         'scion_dev': dev_type
                     }
-                }
+                },
+                'targetLabels': [
+                    'name',
+                    'isd_as_dev',
+                    'scion_dev'
+                    ],
             }
         }
 
@@ -190,7 +195,8 @@ class MonitoringGenerator(object):
                 'labels': {
                     'app': 'kathara',
                     'name': '<name-label>',
-                    'scion_dev': dev_type
+                    'scion_dev': dev_type,
+                    'isd_as_dev': '<isd-as>',
                 },
                 'name': '<name>-metrics'
             },

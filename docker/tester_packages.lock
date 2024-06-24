@@ -147,6 +147,12 @@
           "version": "3.1-20181209-1"
         },
         {
+          "name": "libexpat1",
+          "sha256": "763dc031104fc8a7447f7a0af6784ad13cfef6f41a0b933bd0b3afdfe9e65414",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/e/expat/libexpat1_2.2.6-2+deb10u6_amd64.deb",
+          "version": "2.2.6-2+deb10u6"
+        },
+        {
           "name": "libffi6",
           "sha256": "d4d748d897e8e53aa239ead23a18724a1a30085cc6ca41a8c31b3b1e1b3452f4",
           "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/libf/libffi/libffi6_3.2.1-9_amd64.deb",
@@ -309,6 +315,12 @@
           "version": "2.33.1-0.1"
         },
         {
+          "name": "libmpdec2",
+          "sha256": "9ca85e6e2645a5e660431294320658ec7a2910d9fed90ca4e648c1211a2b844b",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/m/mpdecimal/libmpdec2_2.4.2-2_amd64.deb",
+          "version": "2.4.2-2"
+        },
+        {
           "name": "libncurses6",
           "sha256": "d64818dbc4372a62bb1bedafee20ebd7220141845b35ef78283f5ae826f38c42",
           "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/n/ncurses/libncurses6_6.1+20181013-2+deb10u5_amd64.deb",
@@ -429,6 +441,30 @@
           "version": "0.20.2-2"
         },
         {
+          "name": "libpython3_7_minimal",
+          "sha256": "d6a9c2fa18b2d820427a44a345a79b9a812d951c3af1d779fa5c6d749204ed0c",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/p/python3.7/libpython3.7-minimal_3.7.3-2+deb10u6_amd64.deb",
+          "version": "3.7.3-2+deb10u6"
+        },
+        {
+          "name": "libpython3_7_stdlib",
+          "sha256": "b72e023947939ff113066d9134f75e30107ef4c002dc8d34e5cf32c21b37fa46",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/p/python3.7/libpython3.7-stdlib_3.7.3-2+deb10u6_amd64.deb",
+          "version": "3.7.3-2+deb10u6"
+        },
+        {
+          "name": "libpython3_stdlib",
+          "sha256": "4f8883d378e698aa89b7bd4b68ce8e7cca01c961d3df87fafe4c079bb4668f5b",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/p/python3-defaults/libpython3-stdlib_3.7.3-1_amd64.deb",
+          "version": "3.7.3-1"
+        },
+        {
+          "name": "libreadline7",
+          "sha256": "01e99d68427722e64c603d45f00063c303b02afb53d85c8d1476deca70db64c6",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/r/readline/libreadline7_7.0-5_amd64.deb",
+          "version": "7.0-5"
+        },
+        {
           "name": "libsbc1",
           "sha256": "0c04d888993e48af166282c5da348613f720417b6c25c284b89d48c7614ae4d8",
           "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/s/sbc/libsbc1_1.4-1_amd64.deb",
@@ -487,6 +523,12 @@
           "sha256": "67a140af59ca7f3d75d2a687602bb9e9446cd482ff6b8de9dfcedbe50b1aa119",
           "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/s/spandsp/libspandsp2_0.0.6+dfsg-2_amd64.deb",
           "version": "0.0.6+dfsg-2"
+        },
+        {
+          "name": "libsqlite3_0",
+          "sha256": "ab731943405b570cc9020d6e448f2e81d852f7380a447e46801f1ae5571de8d1",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/s/sqlite3/libsqlite3-0_3.27.2-3+deb10u2_amd64.deb",
+          "version": "3.27.2-3+deb10u2"
         },
         {
           "name": "libssh_gcrypt_4",
@@ -661,6 +703,36 @@
           "sha256": "8d86e2fed0ac0d15750dc68158b0c0f74c9d9454b780da4e023d6c3aabdff62c",
           "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/p/procps/procps_3.3.15-2_amd64.deb",
           "version": "2:3.3.15-2"
+        },
+        {
+          "name": "python3",
+          "sha256": "eb7862c7ad2cf5b86f3851c7103f72f8fa45b48514ddcf371a8e4ba8f02a79e5",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/p/python3-defaults/python3_3.7.3-1_amd64.deb",
+          "version": "3.7.3-1"
+        },
+        {
+          "name": "python3_7",
+          "sha256": "5c3993a19ff519a3072ca889bd182982ce21a62f99d8405aca2d2da577bb5547",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/p/python3.7/python3.7_3.7.3-2+deb10u6_amd64.deb",
+          "version": "3.7.3-2+deb10u6"
+        },
+        {
+          "name": "python3_7_minimal",
+          "sha256": "5d59df47ea9a4c87f23209d52eb3612d478e91e1eded1f371630ab6c7d9d8c5f",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/p/python3.7/python3.7-minimal_3.7.3-2+deb10u6_amd64.deb",
+          "version": "3.7.3-2+deb10u6"
+        },
+        {
+          "name": "python3_minimal",
+          "sha256": "9c937923b35ac24f5cb6be81626f00dd6b810fc0889e5b3b08b7ffc9d179ff1b",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/p/python3-defaults/python3-minimal_3.7.3-1_amd64.deb",
+          "version": "3.7.3-1"
+        },
+        {
+          "name": "readline_common",
+          "sha256": "153d8a5ddb04044d10f877a8955d944612ec9035f4c73eec99d85a92c3816712",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/r/readline/readline-common_7.0-5_all.deb",
+          "version": "7.0-5"
         },
         {
           "name": "sensible_utils",
@@ -851,6 +923,12 @@
           "version": "3.1-20181209-1"
         },
         {
+          "name": "libexpat1",
+          "sha256": "7c1dbd32e179fe1b19d2f78b2ed7c28e142e48b38691ef53662fcef9db934b94",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/e/expat/libexpat1_2.2.6-2+deb10u6_arm64.deb",
+          "version": "2.2.6-2+deb10u6"
+        },
+        {
           "name": "libffi6",
           "sha256": "c5f7f4158dc6821bf37dd44ce0fe4399b5798d4ae7e821ad85b63059a2b31c0f",
           "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/libf/libffi/libffi6_3.2.1-9_arm64.deb",
@@ -1013,6 +1091,12 @@
           "version": "2.33.1-0.1"
         },
         {
+          "name": "libmpdec2",
+          "sha256": "72638348c7faeccd51d75e7bba75748c319a2240734e3577a06d9d0e210a7c35",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/m/mpdecimal/libmpdec2_2.4.2-2_arm64.deb",
+          "version": "2.4.2-2"
+        },
+        {
           "name": "libncurses6",
           "sha256": "8362a7020919c838e7a1138790c5868c6a130af2473ffcc0315122982f95542d",
           "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/n/ncurses/libncurses6_6.1+20181013-2+deb10u5_arm64.deb",
@@ -1133,6 +1217,30 @@
           "version": "0.20.2-2"
         },
         {
+          "name": "libpython3_7_minimal",
+          "sha256": "89ce130e5f6b574875a69349e98f9888f5376c218381a72758eac00b3b8dd112",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/p/python3.7/libpython3.7-minimal_3.7.3-2+deb10u6_arm64.deb",
+          "version": "3.7.3-2+deb10u6"
+        },
+        {
+          "name": "libpython3_7_stdlib",
+          "sha256": "c735add4cb639508deba86f00fd32eabc8e6470045ccfe6375d2188c38ac2706",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/p/python3.7/libpython3.7-stdlib_3.7.3-2+deb10u6_arm64.deb",
+          "version": "3.7.3-2+deb10u6"
+        },
+        {
+          "name": "libpython3_stdlib",
+          "sha256": "4243e3982cfbff8876d5015bf2b4e7afa8ecb37a69fb2272b916273d1698b7ef",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/p/python3-defaults/libpython3-stdlib_3.7.3-1_arm64.deb",
+          "version": "3.7.3-1"
+        },
+        {
+          "name": "libreadline7",
+          "sha256": "2c11b5542b1d9ef224fccb08e0c3e6a1b27e083320aede9620822f60a161e1f7",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/r/readline/libreadline7_7.0-5_arm64.deb",
+          "version": "7.0-5"
+        },
+        {
           "name": "libsbc1",
           "sha256": "4ae47fc2347e5690352d08c486dafbefc322d42eee5520cf3fb14a6b214082c6",
           "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/s/sbc/libsbc1_1.4-1_arm64.deb",
@@ -1191,6 +1299,12 @@
           "sha256": "6c58a18a6a4e9469e677f3dfe256a481db7d2909c16f4ebc4d2d0dd3f869d191",
           "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/s/spandsp/libspandsp2_0.0.6+dfsg-2_arm64.deb",
           "version": "0.0.6+dfsg-2"
+        },
+        {
+          "name": "libsqlite3_0",
+          "sha256": "561805444b8d4e855b1dd35043224eb34b3cfbc266aee0a8443a3bb02a7140c0",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/s/sqlite3/libsqlite3-0_3.27.2-3+deb10u2_arm64.deb",
+          "version": "3.27.2-3+deb10u2"
         },
         {
           "name": "libssh_gcrypt_4",
@@ -1365,6 +1479,36 @@
           "sha256": "06f8457531d801c9c10febfda7b809b222528ac77d8e8bcb66478a9d3c31d3e1",
           "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/p/procps/procps_3.3.15-2_arm64.deb",
           "version": "2:3.3.15-2"
+        },
+        {
+          "name": "python3",
+          "sha256": "ee9524deb4aefae4ac50074bbabc322c219dc814a96bd6f897bfef8a38d937ff",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/p/python3-defaults/python3_3.7.3-1_arm64.deb",
+          "version": "3.7.3-1"
+        },
+        {
+          "name": "python3_7",
+          "sha256": "6b6ce44a7779aa1fdc34a63630172ebee2e8173da079ec87bb8825217e6c0cd3",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/p/python3.7/python3.7_3.7.3-2+deb10u6_arm64.deb",
+          "version": "3.7.3-2+deb10u6"
+        },
+        {
+          "name": "python3_7_minimal",
+          "sha256": "94973b2edec1fd594bdd0ca2ed40b7a6a76467f30f72c1e8bf81eb8b5162a888",
+          "url": "https://snapshot.debian.org/archive/debian-security/20240311T190416Z/pool/updates/main/p/python3.7/python3.7-minimal_3.7.3-2+deb10u6_arm64.deb",
+          "version": "3.7.3-2+deb10u6"
+        },
+        {
+          "name": "python3_minimal",
+          "sha256": "6c73fac47d783bd8213812c8fe3c1e4953fb40e9e389d44624c7e48c6e4dd6f6",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/p/python3-defaults/python3-minimal_3.7.3-1_arm64.deb",
+          "version": "3.7.3-1"
+        },
+        {
+          "name": "readline_common",
+          "sha256": "153d8a5ddb04044d10f877a8955d944612ec9035f4c73eec99d85a92c3816712",
+          "url": "https://snapshot.debian.org/archive/debian/20240311T214105Z/pool/main/r/readline/readline-common_7.0-5_all.deb",
+          "version": "7.0-5"
         },
         {
           "name": "sensible_utils",
@@ -1571,6 +1715,34 @@
             "perl_base"
           ],
           "name": "procps"
+        },
+        {
+          "dependencies": [
+            "gcc_8_base",
+            "libbz2_1_0",
+            "libc6",
+            "libdb5_3",
+            "libexpat1",
+            "libffi6",
+            "libgcc1",
+            "liblzma5",
+            "libmpdec2",
+            "libncursesw6",
+            "libpython3_7_minimal",
+            "libpython3_7_stdlib",
+            "libpython3_stdlib",
+            "libreadline7",
+            "libsqlite3_0",
+            "libssl1_1",
+            "libtinfo6",
+            "libuuid1",
+            "python3_7",
+            "python3_7_minimal",
+            "python3_minimal",
+            "readline_common",
+            "zlib1g"
+          ],
+          "name": "python3"
         },
         {
           "dependencies": [
@@ -1825,6 +1997,34 @@
             "perl_base"
           ],
           "name": "procps"
+        },
+        {
+          "dependencies": [
+            "gcc_8_base",
+            "libbz2_1_0",
+            "libc6",
+            "libdb5_3",
+            "libexpat1",
+            "libffi6",
+            "libgcc1",
+            "liblzma5",
+            "libmpdec2",
+            "libncursesw6",
+            "libpython3_7_minimal",
+            "libpython3_7_stdlib",
+            "libpython3_stdlib",
+            "libreadline7",
+            "libsqlite3_0",
+            "libssl1_1",
+            "libtinfo6",
+            "libuuid1",
+            "python3_7",
+            "python3_7_minimal",
+            "python3_minimal",
+            "readline_common",
+            "zlib1g"
+          ],
+          "name": "python3"
         },
         {
           "dependencies": [

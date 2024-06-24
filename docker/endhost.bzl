@@ -17,6 +17,7 @@ def scion_endhost_image():
             debian_package_layer("telnet"),
             debian_package_layer("tshark"),
             debian_package_layer("wget"),
+            debian_package_layer("python3"),
         ],
     )
 

@@ -103,9 +103,9 @@ scion_app_image_kathara(
 # rules_debian_packages.
 #
 # Generate lockfile with:
-# bazel run //docker:tester_debian_packages.generate
+# bazel run //docker:tester_debian10_packages.generate
 # Update snapshots with:
-# bazel run //docker:tester_debian_packages.update
+# bazel run //docker:tester_debian10_packages.update
 debian_packages_lockfile(
     name = "tester_debian10_packages",
     lock_file = "tester_packages.lock",

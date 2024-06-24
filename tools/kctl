@@ -57,7 +57,19 @@ cmd_start() {
     for device_name in $devices; do
         dev_type=${device_name:0:2}
         service_template=$(cat "gen/service-$dev_type-metrics.yml")
-        patched_service=$(echo "$service_template" | sed "s/<name-label>/$device_name/g; s/<name>/${device_name//_/\-}/g")
+        # Check the prefix and process accordingly
+        if [[ $device_name == cs* || $device_name == br* ]]; then
+            # Remove the initial "cs" or "br" and the last part after the final underscore
+            trimmed_device_name=$(echo $device_name | sed -E 's/^(cs|br)//' | sed -E 's/_[^_]*$//')
+        else
+            # Only remove the initial "sd" if present
+            trimmed_device_name=$(echo $device_name | sed -E 's/^sd//')
+        fi
+
+        # Replace the first underscore with a dash and remaining underscores with colons
+        isd_as=$(echo $trimmed_device_name | sed -E 's/_/-/')
+
+        patched_service=$(echo "$service_template" | sed "s/<name-label>/$device_name/g; s/<name>/${device_name//_/\-}/g; s/<isd-as>/$isd_as/g")
 
         echo "$patched_service" | kubectl apply -n "$namespace" -f - 
 
