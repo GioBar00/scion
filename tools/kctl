@@ -53,6 +53,7 @@ cmd_start() {
         return 1
     fi
 
+    services=""
     devices=$(get_devices "$namespace")
     for device_name in $devices; do
         dev_type=${device_name:0:2}
@@ -71,9 +72,11 @@ cmd_start() {
 
         patched_service=$(echo "$service_template" | sed "s/<name-label>/$device_name/g; s/<name>/${device_name//_/\-}/g; s/<isd-as>/$isd_as/g")
 
-        echo "$patched_service" | kubectl apply -n "$namespace" -f - 
+        services="$services"$'\n---\n'"$patched_service"
 
     done
+
+    echo "$services" | kubectl apply -n "$namespace" -f - 
 
 }
 

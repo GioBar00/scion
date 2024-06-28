@@ -43,7 +43,7 @@ class KatharaLabGenerator(object):
         self.args = args
         self.lab_conf = ""
         self.devices_ifids = {}
-        self.device_startup = {}
+        self.device_info = {}
         self.topoid_devices = {}
         self.net_ids = {}
         self.next_net_id = "0"
@@ -112,15 +112,16 @@ class KatharaLabGenerator(object):
                         self.devices_ifids[dev_id] = 0
                     # Add collision domain to lab.conf
                     gen_lines.append(f'{dev_id}[{self.devices_ifids[dev_id]}]="{coll_domain}"\n')
-                    if dev_id not in self.device_startup:
-                        self.device_startup[dev_id] = {
-                            "content": "",
+                    if dev_id not in self.device_info:
+                        self.device_info[dev_id] = {
+                            "startup": "",
+                            "shutdown": "",
                             "is_ipv6": False,
                             "ip": ip,
                         }
                     else:
                         # Replace the tester_ IP address with the SD IP address
-                        self.device_startup[dev_id]["ip"] = ip
+                        self.device_info[dev_id]["ip"] = ip
                 else:
                     dev_id = dev_id.replace("tester_", "sd")
                     # Force the tester to use the same interface as the SD
@@ -129,9 +130,10 @@ class KatharaLabGenerator(object):
                     else:
                         self.devices_ifids[dev_id] -= 1
 
-                    if dev_id not in self.device_startup:
-                        self.device_startup[dev_id] = {
-                            "content": "",
+                    if dev_id not in self.device_info:
+                        self.device_info[dev_id] = {
+                            "startup": "",
+                            "shutdown": "",
                             "is_ipv6": False,
                             "ip": ip,
                         }
@@ -139,11 +141,11 @@ class KatharaLabGenerator(object):
                 ifid = self.devices_ifids[dev_id] if self.devices_ifids[dev_id] >= 0 else 0
                 # Add IP addresses to startup script
                 if ip.version == 4:
-                    self.device_startup[dev_id][
-                        "content"] += f'ip addr add {ip} dev {self.if_name}{ifid}\n'
+                    self.device_info[dev_id][
+                        "startup"] += f'ip addr add {ip} dev {self.if_name}{ifid}\n'
                 else:
-                    self.device_startup[dev_id][
-                        "content"] += f'ip -6 addr add {ip} dev {self.if_name}{ifid}\n'
+                    self.device_info[dev_id][
+                        "startup"] += f'ip -6 addr add {ip} dev {self.if_name}{ifid}\n'
 
                 self.devices_ifids[dev_id] += 1
 
@@ -176,20 +178,24 @@ class KatharaLabGenerator(object):
         for topo_id, _ in self.args.topo_dicts.items():
             for dev_id in self.topoid_devices[topo_id]:
                 # Added to fix bind error with IPv6
-                self.device_startup[dev_id]["content"] += "sleep 2s\n"
+                self.device_info[dev_id]["startup"] += "sleep 2s\n"
 
                 # if self.args.megalos:
                 #     # Add default route to eth0 to allow prometheus to scrape the metrics
-                #     self.device_startup[dev_id]["content"] += "ip route add 100.64.0.0/10 dev eth0\n"
+                #     self.device_startup[dev_id]["startup"] += "ip route add 100.64.0.0/10 dev eth0\n"
 
                 if dev_id.startswith("br"):
-                    self.device_startup[dev_id]["content"] += f'/app/router --config /{self.config_dir}/br.toml &\n'
+                    self.device_info[dev_id]["startup"] += f'/app/router --config /{self.config_dir}/br.toml &\n'
                 elif dev_id.startswith("cs"):
-                    self.device_startup[dev_id]["content"] += f'/app/control --config /{self.config_dir}/cs.toml &\n'
+                    self.device_info[dev_id]["startup"] += f'/app/control --config /{self.config_dir}/cs.toml &\n'
                 elif dev_id.startswith("sd"):
-                    self.device_startup[dev_id]["content"] += f'chmod +x /{self.config_dir}/{CRON_SCRIPT_FILE}\n'
-                    self.device_startup[dev_id]["content"] += f'/{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
-                    self.device_startup[dev_id]["content"] += f'/app/daemon --config /{self.config_dir}/sd.toml &\n'
+                    self.device_info[dev_id]["startup"] += f'chmod +x /{self.config_dir}/{CRON_SCRIPT_FILE}\n'
+                    self.device_info[dev_id]["startup"] += f'/{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
+                    self.device_info[dev_id]["startup"] += f'/app/daemon --config /{self.config_dir}/sd.toml &\n'
+                
+                    # Add shutdown commands: Clean scmp_path logs from shared folder
+                    self.device_info[dev_id]["shutdown"] += f'pkill -f {CRON_SCRIPT_FILE}\n'
+                    self.device_info[dev_id]["shutdown"] += f'bash -l -c "rm -f /shared/$(hostname).prom"\n'
 
     def _add_enviroment_variables(self):
         for topo_id, _ in self.args.topo_dicts.items():
@@ -199,7 +205,7 @@ class KatharaLabGenerator(object):
             # Read SD config
             with open(sd_toml, "r") as f:
                 sd_config = toml.load(f)
-                self.device_startup[sd_dev_id]["content"] += f'echo \'export SCION_DAEMON="{sd_config["sd"]["address"]}"\' >> /root/.bashrc \n'
+                self.device_info[sd_dev_id]["startup"] += f'echo \'export SCION_DAEMON="{sd_config["sd"]["address"]}"\' >> /root/.bashrc \n'
 
     def _patch_monitoring_config(self):
         for topo_id, _ in self.args.topo_dicts.items():
@@ -242,8 +248,10 @@ class KatharaLabGenerator(object):
 
     def _write_lab(self):
         write_file(os.path.join(self.lab_dir, KATHARA_LAB_CONF), self.lab_conf)
-        for dev_id, content in self.device_startup.items():
-            write_file(os.path.join(self.lab_dir, f"{dev_id}.startup"), content["content"])
+        for dev_id, info in self.device_info.items():
+            write_file(os.path.join(self.lab_dir, f"{dev_id}.startup"), info["startup"])
+            if info["shutdown"]:
+                write_file(os.path.join(self.lab_dir, f"{dev_id}.shutdown"), info["shutdown"])
 
         self._create_directory_structure()
 
@@ -271,10 +279,6 @@ class KatharaLabGenerator(object):
 
     
     def _init_file_content(self):
-#         self._cron_content = """import time, os
-# while True:
-#     os.system("bash -l -c 'python3 /etc/scion/scmp_path_probe.py' > /shared/$(hostname).prom")
-#     time.sleep(30)"""
         self._cron_content = """#!/bin/bash
 
 PATH_METRICS_FILE=/shared/$(hostname).prom
