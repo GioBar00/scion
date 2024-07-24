@@ -194,8 +194,8 @@ class KatharaLabGenerator(object):
                     self.device_info[dev_id]["startup"] += f'/app/daemon --config /{self.config_dir}/sd.toml &\n'
                 
                     # Add shutdown commands: Clean scmp_path logs from shared folder
-                    self.device_info[dev_id]["shutdown"] += f'pkill -f {CRON_SCRIPT_FILE}\n'
-                    self.device_info[dev_id]["shutdown"] += f'bash -l -c "rm -f /shared/$(hostname).prom"\n'
+                    # self.device_info[dev_id]["shutdown"] += f'pkill -f {CRON_SCRIPT_FILE}\n'
+                    # self.device_info[dev_id]["shutdown"] += f'bash -l -c "rm -f /shared/$(hostname).prom"\n'
 
     def _add_enviroment_variables(self):
         for topo_id, _ in self.args.topo_dicts.items():

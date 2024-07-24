@@ -168,7 +168,7 @@ class MonitoringGenerator(object):
                     'any': True
                 },
                 'endpoints': [{
-                    'interval': '5s',
+                    'interval': '10s',
                     'scheme': 'http',
                     'path': '/metrics',
                     'port': 'metrics',

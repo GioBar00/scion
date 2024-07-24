@@ -44,7 +44,7 @@ const (
 	// DefaultCandidateSetSize is the default CandidateSetSize value.
 	DefaultCandidateSetSize = 100
 	// DefaultMaxHopsLength is the default MaxHopsLength value.
-	DefaultMaxHopsLength = 10
+	DefaultMaxHopsLength = 60
 	// DefaultMaxExpTime is the default MaxExpTime value.
 	DefaultMaxExpTime = uint8(63)
 )

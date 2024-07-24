@@ -101,7 +101,7 @@ class TopoGenerator(object):
 
     def _reg_addr(self, topo_id: TopoID, elem_id, addr_type):
         subnet = self.args.subnet_gen[addr_type].register(str(topo_id))
-        if self.args.docker and addr_type == ADDR_TYPE_6:
+        if self.args.docker and addr_type == ADDR_TYPE_6 and not self.args.kathara:
             # for docker also allocate an IPv4 address so that we have ipv4
             # range allocated for the network.
             v4subnet = self.args.subnet_gen[ADDR_TYPE_4].register(str(topo_id) + '_v4')
@@ -112,7 +112,7 @@ class TopoGenerator(object):
         link_name = str(sorted((local_br, remote_br)))
         link_name += str(sorted((local_ifid, remote_ifid)))
         subnet = self.args.subnet_gen[addr_type].register(link_name)
-        if self.args.docker and addr_type == ADDR_TYPE_6:
+        if self.args.docker and addr_type == ADDR_TYPE_6 and not self.args.kathara:
             # for docker also allocate an IPv4 address so that we have ipv4
             # range allocated for the network.
             v4subnet = self.args.subnet_gen[ADDR_TYPE_4].register(link_name + '_v4')

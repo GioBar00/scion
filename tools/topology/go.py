@@ -130,7 +130,7 @@ class GoGenerator(object):
             'features': translate_features(self.args.features),
             'beaconing': {
                  'origination_interval': '1m',
-                 'propagation_interval': '30s',
+                 'propagation_interval': '15s',
              }
         }
         if ca:

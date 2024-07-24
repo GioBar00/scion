@@ -33,8 +33,7 @@ cmd_topodot() {
 start_scion() {
     echo "Running the network..."
     if is_kathara_be; then
-        kathara lstart -d gen/kathara_lab
-        ./tools/quiet ./tools/kctl start
+        ./tools/kctl start
         return 0
     elif is_docker_be; then
         docker compose -f gen/scion-dc.yml up -d
@@ -71,7 +70,7 @@ cmd_start-monitoring() {
     elif is_kathara_be; then
         echo "Jaeger UI: kubectl -n monitoring port-forward svc/jaeger-query 16686:16686"
         echo "Prometheus UI: kubectl -n monitoring port-forward svc/prometheus-operated 9090:9090"
-        ./tools/quiet ./tools/kctl start-monitoring
+        ./tools/kctl start-monitoring
     fi
 }
 
@@ -83,7 +82,7 @@ cmd_stop-monitoring() {
     if is_docker_be; then
         ./tools/quiet ./tools/dc monitoring down
     elif is_kathara_be; then
-        ./tools/quiet ./tools/kctl stop-monitoring
+        ./tools/kctl stop-monitoring
     fi
 }
 
@@ -110,10 +109,9 @@ run_teardown() {
 stop_scion() {
     echo "Terminating this run of the SCION infrastructure"
     if is_kathara_be; then
-        ./tools/quiet ./tools/kctl stop
-        kathara lclean -d gen/kathara_lab
+        ./tools/kctl stop
     elif is_docker_be; then
-        ./tools/quiet ./tools/dc down
+        ./tools/dc down
     else
         ./tools/quiet tools/supervisor.sh stop all # blocks until child processes are stopped
         ./tools/quiet tools/supervisor.sh shutdown # shutdown does not block, but as children are already stopped, actual shutdown will be prompt too.

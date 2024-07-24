@@ -45,6 +45,9 @@ cmd_help() {
 }
 
 cmd_start() {
+
+    kathara lstart -d gen/kathara_lab
+
     echo "Starting services..."
     namespace=$(cmd_namespace)
 
@@ -109,6 +112,15 @@ cmd_stop() {
     if [ -f "$namespace_file" ]; then
         rm "$namespace_file"
     fi
+
+    kathara lclean -d gen/kathara_lab
+
+    # Get nodes
+    # nodes=$(kubectl get nodes -o=jsonpath='{.items[*].metadata.name}')
+
+    # for node in $nodes; do
+    #     kubectl node-shell $node -- rm -rf /home/shared/kathara-*.prom
+    # done
 }
 
 cmd_down() {
@@ -135,7 +147,7 @@ cmd_start-monitoring() {
         return 1
     fi
     kubectl apply -f gen/servicemonitor.yml -n monitoring
-    helm upgrade --install jaeger-all-in-one jaeger-all-in-one/jaeger-all-in-one --namespace monitoring --values gen/jaeger-values.yml
+    #helm upgrade --install jaeger-all-in-one jaeger-all-in-one/jaeger-all-in-one --namespace monitoring --values gen/jaeger-values.yml
 }
 
 cmd_stop-monitoring() {
@@ -147,7 +159,7 @@ cmd_stop-monitoring() {
     fi
 
     kubectl delete -f gen/servicemonitor.yml -n monitoring
-    helm uninstall jaeger-all-in-one -n monitoring
+    #helm uninstall jaeger-all-in-one -n monitoring
 }
 
 cmd_namespace() {
