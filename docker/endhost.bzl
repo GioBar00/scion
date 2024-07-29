@@ -25,7 +25,6 @@ def scion_endhost_image():
         name = "endhost_layer_bin",
         srcs = [
             "//tools/end2end:end2end",
-            "//tools/end2endblast:end2endblast",
             "//scion/cmd/scion",
             "//scion-pki/cmd/scion-pki:scion-pki",
         ],
