@@ -119,7 +119,7 @@ func (bi *binaryIntegration) StartServer(ctx context.Context, dst *snet.UDPAddr)
 	if needSCIOND(args) {
 		daemonAddr, err := GetSCIONDAddress(GenFile(DaemonAddressesFile), dst.IA)
 		if err != nil {
-			return nil, serrors.WrapStr("unable to determine SCION Daemon address", err)
+			return nil, serrors.Wrap("unable to determine SCION Daemon address", err)
 		}
 		args = replacePattern(Daemon, daemonAddr, args)
 	}
@@ -172,7 +172,7 @@ func (bi *binaryIntegration) StartServer(ctx context.Context, dst *snet.UDPAddr)
 	}()
 
 	if err = r.Start(); err != nil {
-		return nil, serrors.WrapStr("Failed to start server", err, "dst", dst.IA)
+		return nil, serrors.Wrap("Failed to start server", err, "dst", dst.IA)
 	}
 	select {
 	case <-ready:
@@ -193,7 +193,7 @@ func (bi *binaryIntegration) StartClient(ctx context.Context,
 	if needSCIOND(args) {
 		daemonAddr, err := GetSCIONDAddress(GenFile(DaemonAddressesFile), src.IA)
 		if err != nil {
-			return nil, serrors.WrapStr("unable to determine SCION Daemon address", err)
+			return nil, serrors.Wrap("unable to determine SCION Daemon address", err)
 		}
 		args = replacePattern(Daemon, daemonAddr, args)
 	}
@@ -206,7 +206,7 @@ func (bi *binaryIntegration) StartClient(ctx context.Context,
 	r.cmd.Env = append(r.cmd.Env, fmt.Sprintf("%s=1", GoIntegrationEnv))
 	pr, pw, err := os.Pipe()
 	if err != nil {
-		return nil, serrors.WrapStr("creating pipe", err)
+		return nil, serrors.Wrap("creating pipe", err)
 	}
 	r.cmd.Stderr = pw
 	r.cmd.Stdout = pw
