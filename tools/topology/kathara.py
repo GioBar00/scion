@@ -190,7 +190,7 @@ class KatharaLabGenerator(object):
                     self.device_info[dev_id]["startup"] += f'/app/control --config /{self.config_dir}/cs.toml &\n'
                 elif dev_id.startswith("sd"):
                     self.device_info[dev_id]["startup"] += f'chmod +x /{self.config_dir}/{CRON_SCRIPT_FILE}\n'
-                    self.device_info[dev_id]["startup"] += f'/{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
+                    # self.device_info[dev_id]["startup"] += f'/{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
                     self.device_info[dev_id]["startup"] += f'/app/daemon --config /{self.config_dir}/sd.toml &\n'
                 
                     # Add shutdown commands: Clean scmp_path logs from shared folder
@@ -222,7 +222,8 @@ class KatharaLabGenerator(object):
                     conf = toml.load(f)
                     conf["metrics"]["prometheus"] = "0.0.0.0:" + str(conf["metrics"]["prometheus"]).split(":")[-1]
                     if "tracing" in conf:
-                        conf["tracing"]["agent"] = "jaeger-all-in-one.monitoring.svc.cluster.local:" + str(conf["tracing"]["agent"]).split(":")[1]
+                        # conf["tracing"]["agent"] = "jaeger-all-in-one.monitoring.svc.cluster.local:" + str(conf["tracing"]["agent"]).split(":")[1]
+                        conf["tracing"]["enabled"] = False
                     f.seek(0)
                     f.write(toml.dumps(conf))
                     f.truncate()
