@@ -237,8 +237,8 @@ func (s *baseStore) UpdatePolicy(ctx context.Context, policy Policy) error {
 }
 
 func selectAlgo(o storeOptions) selectionAlgorithm {
-	if o.chainChecker != nil {
-		return newChainsAvailableAlgo(o.chainChecker)
-	}
+	// if o.chainChecker != nil {
+	// 	return newChainsAvailableAlgo(o.chainChecker)
+	// }
 	return baseAlgo{}
 }

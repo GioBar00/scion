@@ -87,7 +87,7 @@ func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.U
 	// if err := h.verifySegment(ctx, b.Segment, peer); err != nil {
 	// 	logger.Info("Beacon verification failed", "err", err)
 	// 	h.updateMetric(span, labels.WithResult(prom.ErrVerify), err)
-	// 	return serrors.WrapStr("verifying beacon", err)
+	// 	return serrors.Wrap("verifying beacon", err)
 	// }
 	stat, err := h.Inserter.InsertBeacon(ctx, b)
 	if err != nil {

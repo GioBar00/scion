@@ -120,9 +120,11 @@ func (s *CachingPolicyGen) Generate(ctx context.Context) (cppki.CAPolicy, error)
 			return cppki.CAPolicy{}, serrors.New("no CA policy available, " +
 				"reload interval has not passed")
 		}
+		log.FromCtx(ctx).Debug("Using cached CA policy")
 		return s.cached, nil
 	}
 	s.lastGen = now
+	log.FromCtx(ctx).Debug("Generating new CA policy")
 	policy, err := s.PolicyGen.Generate(ctx)
 	if err != nil {
 		s.ok = false

@@ -133,7 +133,7 @@ func (bi *binaryIntegration) StartServer(ctx context.Context, dst *snet.UDPAddr)
 	}
 	pr, pw, err := os.Pipe()
 	if err != nil {
-		return nil, serrors.WrapStr("creating pipe", err)
+		return nil, serrors.Wrap("creating pipe", err)
 	}
 	defer pw.Close()
 

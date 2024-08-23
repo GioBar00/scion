@@ -144,10 +144,10 @@ func runTests(in integration.Integration, pairs []integration.IAPair) error {
 		// clear logdir
 		if *integration.Kathara {
 			if err := os.RemoveAll(logDir()); err != nil {
-				return serrors.WrapStr("removing log dir", err)
+				return serrors.Wrap("removing log dir", err)
 			}
 			if err := os.MkdirAll(logDir(), os.ModePerm); err != nil {
-				return serrors.WrapStr("creating log dir", err)
+				return serrors.Wrap("creating log dir", err)
 			}
 		}
 

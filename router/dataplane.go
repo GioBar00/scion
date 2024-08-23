@@ -767,6 +767,9 @@ func (d *DataPlane) runReceiver(ifID uint16, conn BatchConn, cfg *RunConfig,
 			log.Debug("Error while reading batch", "interfaceID", ifID, "err", err)
 			continue
 		}
+		// if numPkts > 0 {
+		// 	log.Debug("Read batch", "numPkts", numPkts, "interfaceID", ifID)
+		// }
 		for i, msg := range msgs[:numPkts] {
 			enqueueForProcessing(msg.N, msg.Addr.(*net.UDPAddr), packets[i])
 		}
@@ -1059,7 +1062,9 @@ func (d *DataPlane) runForwarder(ifID uint16, conn BatchConn, cfg *RunConfig, c 
 			// WriteBatch returns -1 on error, we just consider this as
 			// 0 packets written
 			written = 0
-		}
+		} // else {
+		// 	log.Debug("Wrote batch", "interface", ifID, "written", written)
+		// }
 
 		updateOutputMetrics(metrics, pkts[:written])
 
