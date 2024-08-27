@@ -92,19 +92,19 @@ cmd_stop() {
         return 1
     fi
 
-    devices=$(get_devices "$namespace")
-    for device_name in $devices; do
-        dev_type=${device_name:0:2}
-        if [ "$dev_type" == "sd" ]; then
-            kathara exec -d gen/kathara_lab $device_name "pkill -f cron.sh"
-        fi
-    done
-    for device_name in $devices; do
-        dev_type=${device_name:0:2}
-        if [ "$dev_type" == "sd" ]; then
-            kathara exec -d gen/kathara_lab $device_name "bash -l -c 'rm -f /shared/kathara-*.prom'"
-        fi
-    done
+    # devices=$(get_devices "$namespace")
+    # for device_name in $devices; do
+    #     dev_type=${device_name:0:2}
+    #     if [ "$dev_type" == "sd" ]; then
+    #         kathara exec -d gen/kathara_lab $device_name "pkill -f cron.sh"
+    #     fi
+    # done
+    # for device_name in $devices; do
+    #     dev_type=${device_name:0:2}
+    #     if [ "$dev_type" == "sd" ]; then
+    #         kathara exec -d gen/kathara_lab $device_name "bash -l -c 'rm -f /shared/kathara-*.prom'"
+    #     fi
+    # done
 
     kubectl delete service -n "$namespace" -l app=kathara
 
