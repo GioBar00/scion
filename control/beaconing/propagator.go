@@ -31,6 +31,7 @@ import (
 	"github.com/scionproto/scion/pkg/private/serrors"
 	seg "github.com/scionproto/scion/pkg/segment"
 	"github.com/scionproto/scion/private/periodic"
+	"github.com/scionproto/scion/private/procperf"
 	"github.com/scionproto/scion/private/topology"
 )
 
@@ -86,6 +87,7 @@ func (p *Propagator) Run(ctx context.Context) {
 }
 
 func (p *Propagator) run(ctx context.Context) error {
+	t := time.Now()
 	intfs := p.needsBeacons()
 	if len(intfs) == 0 {
 		return nil
@@ -96,6 +98,12 @@ func (p *Propagator) run(ctx context.Context) error {
 	if err != nil {
 		metrics.CounterInc(p.InternalErrors)
 		return err
+	}
+
+	for _, bb := range beacons {
+		for _, b := range bb {
+			procperf.AddBeaconTime(b.Segment.Info.SegmentID, t)
+		}
 	}
 
 	// Only log on info and error level every propagation period to reduce
@@ -330,6 +338,10 @@ func (p *propagator) Propagate(ctx context.Context) error {
 					"waited_for", time.Since(sendStart).String(),
 					"err", err,
 				)
+			}
+
+			if err := procperf.DoneBeacon(b.Segment.Info.SegmentID, procperf.Propagated); err != nil {
+				logger.Error("PROCPERF: error done beacon", "err", err)
 			}
 		}()
 	}

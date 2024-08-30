@@ -79,6 +79,7 @@ import (
 	"github.com/scionproto/scion/private/mgmtapi/jwtauth"
 	segapi "github.com/scionproto/scion/private/mgmtapi/segments/api"
 	"github.com/scionproto/scion/private/periodic"
+	"github.com/scionproto/scion/private/procperf"
 	segfetchergrpc "github.com/scionproto/scion/private/segment/segfetcher/grpc"
 	"github.com/scionproto/scion/private/segment/seghandler"
 	"github.com/scionproto/scion/private/service"
@@ -111,6 +112,11 @@ func main() {
 
 func realMain(ctx context.Context) error {
 	metrics := cs.NewMetrics()
+
+	if err := procperf.Init(); err != nil {
+		return serrors.Wrap("PROCPERF: error initialising", err)
+	}
+	defer procperf.Close()
 
 	topo, err := topology.NewLoader(topology.LoaderCfg{
 		File:      globalCfg.General.Topology(),

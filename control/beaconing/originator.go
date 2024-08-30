@@ -32,6 +32,7 @@ import (
 	"github.com/scionproto/scion/pkg/private/serrors"
 	seg "github.com/scionproto/scion/pkg/segment"
 	"github.com/scionproto/scion/private/periodic"
+	"github.com/scionproto/scion/private/procperf"
 )
 
 var _ periodic.Task = (*Originator)(nil)
@@ -158,6 +159,7 @@ type beaconOriginator struct {
 
 // originateBeacon originates a beacon on the given ifID.
 func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
+	t := time.Now()
 	labels := originatorLabels{intf: o.intf}
 	topoInfo := o.intf.TopoInfo()
 	beacon, err := o.createBeacon(ctx)
@@ -165,6 +167,8 @@ func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
 		o.incrementMetrics(labels.WithResult("err_create"))
 		return serrors.Wrap("creating beacon", err, "egress_interface", o.intf.TopoInfo().ID)
 	}
+
+	procperf.AddBeaconTime(beacon.Info.SegmentID, t)
 
 	senderStart := time.Now()
 	senderCtx, cancelF := context.WithTimeout(ctx, defaultNewSenderTimeout)
@@ -193,6 +197,11 @@ func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
 	}
 	o.onSuccess(o.intf)
 	o.incrementMetrics(labels.WithResult(prom.Success))
+
+	if err := procperf.DoneBeacon(beacon.Info.SegmentID, procperf.Originated); err != nil {
+		return serrors.Wrap("PROCPERF: error done beacon", err)
+	}
+
 	return nil
 }
 

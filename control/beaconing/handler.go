@@ -17,6 +17,7 @@ package beaconing
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/opentracing/opentracing-go"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/scionproto/scion/pkg/private/serrors"
 	seg "github.com/scionproto/scion/pkg/segment"
 	"github.com/scionproto/scion/pkg/snet"
+	"github.com/scionproto/scion/private/procperf"
 	"github.com/scionproto/scion/private/segment/segverifier"
 	infra "github.com/scionproto/scion/private/segment/verifier"
 	"github.com/scionproto/scion/private/topology"
@@ -51,8 +53,10 @@ type Handler struct {
 	BeaconsHandled metrics.Counter
 }
 
-// HandleBeacon handles a baeacon received from peer.
+// HandleBeacon handles a beacon received from peer.
 func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.UDPAddr) error {
+	procperf.AddBeaconTime(b.Segment.Info.SegmentID, time.Now())
+
 	span := opentracing.SpanFromContext(ctx)
 	labels := handlerLabels{Ingress: b.InIfID}
 
@@ -99,6 +103,11 @@ func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.U
 	labels = labels.WithResult(resultValue(stat.Inserted, stat.Updated, stat.Filtered))
 	h.updateMetric(span, labels, err)
 	logger.Debug("Inserted beacon")
+
+	if err := procperf.DoneBeacon(b.Segment.Info.SegmentID, procperf.Received); err != nil {
+		return serrors.Wrap("PROCPERF: error done receive", err)
+	}
+
 	return nil
 }
 
