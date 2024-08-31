@@ -340,7 +340,7 @@ func (p *propagator) Propagate(ctx context.Context) error {
 					"err", err,
 				)
 			}
-			log.FromCtx(ctx).Info("PROCPERF: Propagate Stop beacon", "beacon_id", id)
+			log.FromCtx(ctx).Info("PROCPERF: Propagate Stop beacon", "beacon_id", id, "new_id", b.Segment.GetLoggingID())
 			if err := procperf.DoneBeacon(id, procperf.Propagated); err != nil {
 				logger.Error("PROCPERF: error done beacon", "err", err)
 			}

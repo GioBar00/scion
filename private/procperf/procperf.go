@@ -1,7 +1,6 @@
 package procperf
 
 import (
-	"github.com/scionproto/scion/pkg/log"
 	"github.com/scionproto/scion/pkg/private/serrors"
 	"os"
 	"sync"
@@ -34,12 +33,10 @@ func Close() {
 }
 
 func AddBeaconTime(id string, t time.Time) {
-	log.Info("PROCPERF: Add Beacon Time", "beacon_id", id, "time", t)
 	beaconTime[id] = t
 }
 
 func DoneBeacon(id string, procPerfType Type) error {
-	log.Info("PROCPERF: Done Beacon", "beacon_id", id, "type", procPerfType)
 	if _, ok := beaconTime[id]; ok {
 		ppt := string(procPerfType)
 		_, err := file.WriteString(id + "; " + ppt + "; " + beaconTime[id].String() + "; " + time.Now().String() + "\n")
