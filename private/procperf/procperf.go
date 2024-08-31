@@ -23,7 +23,7 @@ func Init() error {
 	var err error = nil
 	once.Do(func() {
 		file, _ = os.OpenFile("beacon_time.csv", os.O_CREATE|os.O_RDWR, 0666)
-		_, err = file.WriteString("Segment ID; Type; Start Time; End Time\n")
+		_, err = file.WriteString("ID; Next ID; Type; Start Time; End Time\n")
 	})
 	return err
 }
@@ -36,10 +36,17 @@ func AddBeaconTime(id string, t time.Time) {
 	beaconTime[id] = t
 }
 
-func DoneBeacon(id string, procPerfType Type) error {
+func DoneBeacon(id string, procPerfType Type, newId ...string) error {
 	if _, ok := beaconTime[id]; ok {
+		if procPerfType == Propagated && len(newId) == 0 {
+			return serrors.New("newId not found for propagated beacon")
+		}
+		newIdStr := ""
+		if len(newId) > 0 {
+			newIdStr = newId[0]
+		}
 		ppt := string(procPerfType)
-		_, err := file.WriteString(id + "; " + ppt + "; " + beaconTime[id].String() + "; " + time.Now().String() + "\n")
+		_, err := file.WriteString(id + "; " + newIdStr + "; " + ppt + "; " + beaconTime[id].String() + "; " + time.Now().String() + "\n")
 		delete(beaconTime, id)
 		return err
 	} else {

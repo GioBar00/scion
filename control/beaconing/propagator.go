@@ -99,7 +99,7 @@ func (p *Propagator) run(ctx context.Context) error {
 		metrics.CounterInc(p.InternalErrors)
 		return err
 	}
-	log.FromCtx(ctx).Info("PROCPERF: Propagate Start", "beacons", len(beacons))
+	//log.FromCtx(ctx).Info("PROCPERF: Propagate Start", "beacons", len(beacons))
 	for _, bb := range beacons {
 		for _, b := range bb {
 			log.FromCtx(ctx).Info("PROCPERF: Propagate Start beacon", "beacon_id", b.Segment.GetLoggingID())
@@ -340,8 +340,8 @@ func (p *propagator) Propagate(ctx context.Context) error {
 					"err", err,
 				)
 			}
-			log.FromCtx(ctx).Info("PROCPERF: Propagate Stop beacon", "beacon_id", id, "new_id", b.Segment.GetLoggingID())
-			if err := procperf.DoneBeacon(id, procperf.Propagated); err != nil {
+			//log.FromCtx(ctx).Info("PROCPERF: Propagate Stop beacon", "beacon_id", id, "new_id", b.Segment.GetLoggingID())
+			if err := procperf.DoneBeacon(id, procperf.Propagated, b.Segment.GetLoggingID()); err != nil {
 				logger.Error("PROCPERF: error done beacon", "err", err)
 			}
 		}()
