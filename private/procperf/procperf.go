@@ -3,7 +3,6 @@ package procperf
 import (
 	"github.com/scionproto/scion/pkg/private/serrors"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -15,7 +14,7 @@ const (
 	Originated Type = "Originated"
 )
 
-var beaconTime = make(map[uint16]time.Time)
+var beaconTime = make(map[string]time.Time)
 var file *os.File
 
 func Init() error {
@@ -31,16 +30,15 @@ func Close() {
 	}
 }
 
-func AddBeaconTime(segmentID uint16, t time.Time) {
-	beaconTime[segmentID] = t
+func AddBeaconTime(id string, t time.Time) {
+	beaconTime[id] = t
 }
 
-func DoneBeacon(segmentID uint16, procPerfType Type) error {
-	if _, ok := beaconTime[segmentID]; ok {
-		sID := strconv.Itoa(int(segmentID))
+func DoneBeacon(id string, procPerfType Type) error {
+	if _, ok := beaconTime[id]; ok {
 		ppt := string(procPerfType)
-		_, err := file.WriteString(sID + "; " + ppt + "; " + beaconTime[segmentID].String() + "; " + time.Now().String() + "\n")
-		delete(beaconTime, segmentID)
+		_, err := file.WriteString(id + "; " + ppt + "; " + beaconTime[id].String() + "; " + time.Now().String() + "\n")
+		delete(beaconTime, id)
 		return err
 	} else {
 		return serrors.New("beacon not found in beaconTime")

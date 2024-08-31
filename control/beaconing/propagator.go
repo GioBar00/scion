@@ -102,7 +102,7 @@ func (p *Propagator) run(ctx context.Context) error {
 
 	for _, bb := range beacons {
 		for _, b := range bb {
-			procperf.AddBeaconTime(b.Segment.Info.SegmentID, t)
+			procperf.AddBeaconTime(b.Segment.GetLoggingID(), t)
 		}
 	}
 
@@ -340,7 +340,7 @@ func (p *propagator) Propagate(ctx context.Context) error {
 				)
 			}
 
-			if err := procperf.DoneBeacon(b.Segment.Info.SegmentID, procperf.Propagated); err != nil {
+			if err := procperf.DoneBeacon(b.Segment.GetLoggingID(), procperf.Propagated); err != nil {
 				logger.Error("PROCPERF: error done beacon", "err", err)
 			}
 		}()
