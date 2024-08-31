@@ -1,8 +1,10 @@
 package procperf
 
 import (
+	"github.com/scionproto/scion/pkg/log"
 	"github.com/scionproto/scion/pkg/private/serrors"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -16,25 +18,28 @@ const (
 
 var beaconTime = make(map[string]time.Time)
 var file *os.File
+var once sync.Once
 
 func Init() error {
-	file, _ = os.OpenFile("beacon_time.txt", os.O_CREATE|os.O_RDWR, 0666)
-	_, err := file.WriteString("Segment ID; Type; Start Time; End Time\n")
+	var err error = nil
+	once.Do(func() {
+		file, _ = os.OpenFile("beacon_time.csv", os.O_CREATE|os.O_RDWR, 0666)
+		_, err = file.WriteString("Segment ID; Type; Start Time; End Time\n")
+	})
 	return err
 }
 
 func Close() {
-	err := file.Close()
-	if err != nil {
-		return
-	}
+	_ = file.Close()
 }
 
 func AddBeaconTime(id string, t time.Time) {
+	log.Info("PROCPERF: Add Beacon Time", "beacon_id", id, "time", t)
 	beaconTime[id] = t
 }
 
 func DoneBeacon(id string, procPerfType Type) error {
+	log.Info("PROCPERF: Done Beacon", "beacon_id", id, "type", procPerfType)
 	if _, ok := beaconTime[id]; ok {
 		ppt := string(procPerfType)
 		_, err := file.WriteString(id + "; " + ppt + "; " + beaconTime[id].String() + "; " + time.Now().String() + "\n")
