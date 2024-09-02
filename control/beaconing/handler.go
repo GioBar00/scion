@@ -55,8 +55,8 @@ type Handler struct {
 
 // HandleBeacon handles a beacon received from peer.
 func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.UDPAddr) error {
-	//log.Info("PROCPERF: Receive Start beacon", "beacon_id", b.Segment.GetLoggingID())
-	procperf.AddBeaconTime(b.Segment.GetLoggingID(), time.Now())
+	bcnId := b.Segment.GetLoggingID()
+	procperf.AddBeaconTime(bcnId, time.Now())
 
 	span := opentracing.SpanFromContext(ctx)
 	labels := handlerLabels{Ingress: b.InIfID}
@@ -105,8 +105,7 @@ func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.U
 	h.updateMetric(span, labels, err)
 	logger.Debug("Inserted beacon")
 
-	//log.Info("PROCPERF: Receive Stop beacon", "beacon_id", b.Segment.GetLoggingID())
-	if err := procperf.DoneBeacon(b.Segment.GetLoggingID(), procperf.Received); err != nil {
+	if err := procperf.DoneBeacon(bcnId, procperf.Received, time.Now()); err != nil {
 		return serrors.Wrap("PROCPERF: error done receive", err)
 	}
 
