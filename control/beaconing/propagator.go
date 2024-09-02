@@ -102,7 +102,7 @@ func (p *Propagator) run(ctx context.Context) error {
 	//log.FromCtx(ctx).Info("PROCPERF: Propagate Start", "beacons", len(beacons))
 	for _, bb := range beacons {
 		for _, b := range bb {
-			log.FromCtx(ctx).Info("PROCPERF: Propagate Start beacon", "beacon_id", b.Segment.GetLoggingID())
+			//log.FromCtx(ctx).Info("PROCPERF: Propagate Start beacon", "beacon_id", b.Segment.GetLoggingID())
 			procperf.AddBeaconTime(b.Segment.GetLoggingID(), t)
 		}
 	}
