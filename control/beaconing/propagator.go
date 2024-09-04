@@ -260,7 +260,6 @@ func (p *propagator) Propagate(ctx context.Context) error {
 			success = true
 		}
 	)
-
 	senderStart := time.Now()
 	senderCtx, cancel := context.WithTimeout(ctx, defaultNewSenderTimeout)
 	defer cancel()
@@ -291,7 +290,6 @@ func (p *propagator) Propagate(ctx context.Context) error {
 			// Collect the ID before the segment is extended such that it
 			// matches the ID that was logged above in logCandidateBeacons.
 			id := b.Segment.GetLoggingID()
-			procperf.AddBeaconTime(id, senderStart)
 
 			if err := p.extender.Extend(ctx, b.Segment, b.InIfID, egress, p.peers); err != nil {
 				logger.Error("Unable to extend beacon",
@@ -322,6 +320,9 @@ func (p *propagator) Propagate(ctx context.Context) error {
 			setSuccess()
 			p.incMetric(b.Segment.FirstIA(), b.InIfID, egress, prom.Success)
 			p.intf.Propagate(p.now)
+			stopPropagate := time.Now()
+			bcnId := procperf.GetFullId(id, b.Segment.Info.SegmentID)
+			newBcnId := procperf.GetFullId(b.Segment.GetLoggingID(), b.Segment.Info.SegmentID)
 
 			if logger.Enabled(log.DebugLevel) {
 				logger.Debug("Propagated beacon",
@@ -333,7 +334,8 @@ func (p *propagator) Propagate(ctx context.Context) error {
 					"err", err,
 				)
 			}
-			if err := procperf.DoneBeacon(id, procperf.Propagated, time.Now(), b.Segment.GetLoggingID()); err != nil {
+
+			if err := procperf.AddTimeDoneBeacon(bcnId, procperf.Propagated, senderStart, stopPropagate, newBcnId); err != nil {
 				logger.Error("PROCPERF: error done beacon", "err", err)
 			}
 		}()

@@ -167,8 +167,7 @@ func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
 		return serrors.Wrap("creating beacon", err, "egress_interface", o.intf.TopoInfo().ID)
 	}
 
-	bcnId := beacon.GetLoggingID()
-	procperf.AddBeaconTime(bcnId, time.Now())
+	bcnId := procperf.GetFullId(beacon.GetLoggingID(), beacon.Info.SegmentID)
 
 	senderStart := time.Now()
 	senderCtx, cancelF := context.WithTimeout(ctx, defaultNewSenderTimeout)
@@ -198,7 +197,9 @@ func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
 	o.onSuccess(o.intf)
 	o.incrementMetrics(labels.WithResult(prom.Success))
 
-	if err := procperf.DoneBeacon(bcnId, procperf.Originated, time.Now()); err != nil {
+	stopOriginate := time.Now()
+
+	if err := procperf.AddTimeDoneBeacon(bcnId, procperf.Originated, senderStart, stopOriginate, bcnId); err != nil {
 		return serrors.Wrap("PROCPERF: error done beacon", err)
 	}
 

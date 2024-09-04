@@ -2,11 +2,12 @@ package procperf
 
 import (
 	"fmt"
-	"github.com/scionproto/scion/pkg/log"
-	"github.com/scionproto/scion/pkg/private/serrors"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/scionproto/scion/pkg/log"
+	"github.com/scionproto/scion/pkg/private/serrors"
 )
 
 type Type string
@@ -18,7 +19,7 @@ const (
 	Processed  Type = "Processed"
 )
 
-var beaconTime = make(map[string]time.Time)
+// var beaconTime = sync.Map{}
 var file *os.File
 var once sync.Once
 
@@ -39,24 +40,35 @@ func Close() {
 	_ = file.Close()
 }
 
-func AddBeaconTime(id string, t time.Time) {
-	beaconTime[id] = t
+//func AddBeaconTime(id string, t time.Time) {
+//	beaconTime.Store(id, t)
+//}
+//
+//func DoneBeacon(id string, procPerfType Type, t time.Time, newId ...string) error {
+//	if bt, ok := beaconTime.Load(id); ok {
+//		bt := bt.(time.Time)
+//		return AddTimeDoneBeacon(id, procPerfType, bt, t, newId...)
+//	} else {
+//		return serrors.New("beacon not found in beaconTime")
+//	}
+//}
+
+func AddTimeDoneBeacon(id string, procPerfType Type, start time.Time, end time.Time, newId ...string) error {
+	if procPerfType == Propagated && len(newId) == 0 {
+		return serrors.New("newId not found for propagated beacon")
+	}
+	newIdStr := ""
+	if len(newId) > 0 {
+		newIdStr = newId[0]
+	}
+	ppt := string(procPerfType)
+	// log.Info(fmt.Sprintf("Beacon %s - ID:%s --- %s %s", ppt, id, t.String(), newIdStr))
+	_, err := file.WriteString(id + "; " + newIdStr + "; " + ppt + "; " + start.String() + "; " + end.String() + "\n")
+	//beaconTime.Delete(id)
+	//return nil
+	return err
 }
 
-func DoneBeacon(id string, procPerfType Type, t time.Time, newId ...string) error {
-	if _, ok := beaconTime[id]; ok {
-		if procPerfType == Propagated && len(newId) == 0 {
-			return serrors.New("newId not found for propagated beacon")
-		}
-		newIdStr := ""
-		if len(newId) > 0 {
-			newIdStr = newId[0]
-		}
-		ppt := string(procPerfType)
-		_, err := file.WriteString(id + "; " + newIdStr + "; " + ppt + "; " + beaconTime[id].String() + "; " + t.String() + "\n")
-		delete(beaconTime, id)
-		return err
-	} else {
-		return serrors.New("beacon not found in beaconTime")
-	}
+func GetFullId(id string, segID uint16) string {
+	return fmt.Sprintf("%s %04x", id, segID)
 }

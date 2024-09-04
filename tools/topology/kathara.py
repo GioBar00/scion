@@ -62,7 +62,7 @@ class KatharaLabGenerator(object):
         if idx != -1:
             real_dev_id = real_dev_id[:idx] + "-" + real_dev_id[idx + 1:]
         return real_dev_id
-    
+
     def _increment_net_id(self, idx):
         if idx < 0:
             self.next_net_id = self.alphabet[0] + self.next_net_id
@@ -102,7 +102,7 @@ class KatharaLabGenerator(object):
         for net, desc in self.args.networks.items():
             if net not in self.net_ids:
                 self.net_ids[net] = self.next_net_id
-                self._increment_net_id(len(self.next_net_id) - 1)   
+                self._increment_net_id(len(self.next_net_id) - 1)
             coll_domain = f"{self.net_ids[net]}"
             for dev_id, ip in desc.ip_net.items():
                 dev_id = dev_id.replace("_internal", "").replace("-", "_")
@@ -184,6 +184,8 @@ class KatharaLabGenerator(object):
                 #     # Add default route to eth0 to allow prometheus to scrape the metrics
                 #     self.device_startup[dev_id]["startup"] += "ip route add 100.64.0.0/10 dev eth0\n"
 
+                self.device_info[dev_id]["startup"] += f'ntpd\n'
+
                 if dev_id.startswith("br"):
                     self.device_info[dev_id]["startup"] += f'/app/router --config /{self.config_dir}/br.toml &\n'
                 elif dev_id.startswith("cs"):
@@ -192,7 +194,7 @@ class KatharaLabGenerator(object):
                     self.device_info[dev_id]["startup"] += f'chmod +x /{self.config_dir}/{CRON_SCRIPT_FILE}\n'
                     # self.device_info[dev_id]["startup"] += f'/{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
                     self.device_info[dev_id]["startup"] += f'/app/daemon --config /{self.config_dir}/sd.toml &\n'
-                
+
                     # Add shutdown commands: Clean scmp_path logs from shared folder
                     # self.device_info[dev_id]["shutdown"] += f'pkill -f {CRON_SCRIPT_FILE}\n'
                     # self.device_info[dev_id]["shutdown"] += f'bash -l -c "rm -f /shared/$(hostname).prom"\n'
@@ -217,7 +219,7 @@ class KatharaLabGenerator(object):
                 else:
                     real_dev_id = self.get_real_device_id(dev_id)
                     conf_toml = f"{conf_dir}/{real_dev_id}.toml"
-                
+
                 with open(conf_toml, "r+") as f:
                     conf = toml.load(f)
                     conf["metrics"]["prometheus"] = "0.0.0.0:" + str(conf["metrics"]["prometheus"]).split(":")[-1]
@@ -229,7 +231,7 @@ class KatharaLabGenerator(object):
                     f.truncate()
 
     def _expose_paths_metrics(self):
-        
+
         write_file(os.path.join(os.path.join(self.output_base, self.args.output_dir), CRON_SCRIPT_FILE), self._cron_content)
         write_file(os.path.join(os.path.join(self.output_base, self.args.output_dir), SCMP_PATH_PROBE_SCRIPT_FILE), self._scmp_path_probe_content)
 
@@ -237,8 +239,8 @@ class KatharaLabGenerator(object):
             conf_dir = str(os.path.join(self.output_base, topo_id.base_dir(self.args.output_dir)))
             scmp_path_probe_targets_json = [str(t) for t, _ in self.args.topo_dicts.items() if t != topo_id]
             write_file(os.path.join(conf_dir, SCMP_PATH_PROBE_TARGETS_FILE), json.dumps(scmp_path_probe_targets_json))
-                    
-                
+
+
     def _replace_string(self, obj, original_value, replace_value):
         for key, value in obj.items():
             if isinstance(value, dict):
@@ -278,7 +280,7 @@ class KatharaLabGenerator(object):
                     real_dev_id = self.get_real_device_id(dev_id)
                     symlink(f"{conf_dir}/{real_dev_id}.toml", f"{dest_conf_dir}/{real_dev_id[:2]}.toml")
 
-    
+
     def _init_file_content(self):
         self._cron_content = """#!/bin/bash
 
@@ -291,7 +293,7 @@ while true; do
     bash -l -c "python3 /etc/scion/scmp_path_probe.py" > "$PATH_METRICS_FILE"
     sleep 30s
 done"""
-        
+
         self._scmp_path_probe_content = """#!/usr/bin/env python3
 # Copyright 2021 ETH Zurich
 #
