@@ -92,7 +92,6 @@ import (
 	truststoragemetrics "github.com/scionproto/scion/private/storage/trust/metrics"
 	"github.com/scionproto/scion/private/topology"
 	"github.com/scionproto/scion/private/trust"
-	"github.com/scionproto/scion/private/trust/compat"
 	trustgrpc "github.com/scionproto/scion/private/trust/grpc"
 	trustmetrics "github.com/scionproto/scion/private/trust/metrics"
 )
@@ -290,14 +289,15 @@ func realMain(ctx context.Context) error {
 		Recurser: trust.ASLocalRecurser{IA: topo.IA()},
 		// XXX(roosd): cyclic dependency on router. It is set below.
 	}
-	verifier := compat.Verifier{
-		Verifier: trust.Verifier{
-			Engine:             provider,
-			CacheHits:          cacheHits,
-			MaxCacheExpiration: globalCfg.TrustEngine.Cache.Expiration.Duration,
-			Cache:              trustengineCache,
-		},
-	}
+	//verifier := compat.Verifier{
+	//	Verifier: trust.Verifier{
+	//		Engine:             provider,
+	//		CacheHits:          cacheHits,
+	//		MaxCacheExpiration: globalCfg.TrustEngine.Cache.Expiration.Duration,
+	//		Cache:              trustengineCache,
+	//	},
+	//}
+	verifier := trust.AcceptAllVerifier{}
 	fetcherCfg := segreq.FetcherConfig{
 		IA:            topo.IA(),
 		MTU:           topo.MTU(),
