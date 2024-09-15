@@ -129,8 +129,8 @@ class GoGenerator(object):
             'api': self._api_entry(infra_elem, CS_PROM_PORT+700),
             'features': translate_features(self.args.features),
             'beaconing': {
-                 'origination_interval': '3m',
-                 'propagation_interval': '1m',
+                 'origination_interval': '10h',
+                 'propagation_interval': '20m',
              }
         }
         if ca:
