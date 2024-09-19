@@ -56,7 +56,7 @@ type Handler struct {
 // HandleBeacon handles a beacon received from peer.
 func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.UDPAddr) error {
 	bcnId := procperf.GetFullId(b.Segment.GetLoggingID(), b.Segment.Info.SegmentID)
-	startHandle := time.Now()
+	timeHandleS := time.Now()
 	span := opentracing.SpanFromContext(ctx)
 	labels := handlerLabels{Ingress: b.InIfID}
 
@@ -78,21 +78,25 @@ func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.U
 	ctx = log.CtxWith(ctx, logger)
 
 	logger.Debug("Received beacon")
+	timePreFilterS := time.Now()
 	if err := h.Inserter.PreFilter(b); err != nil {
 		logger.Debug("Beacon pre-filtered", "err", err)
 		h.updateMetric(span, labels.WithResult("err_prefilter"), err)
 		return err
 	}
+	timeValidateS := time.Now()
 	if err := h.validateASEntry(b, intf); err != nil {
 		logger.Info("Beacon validation failed", "err", err)
 		h.updateMetric(span, labels.WithResult(prom.ErrVerify), err)
 		return err
 	}
+	timeVerifyS := time.Now()
 	if err := h.verifySegment(ctx, b.Segment, peer); err != nil {
 		logger.Info("Beacon verification failed", "err", err)
 		h.updateMetric(span, labels.WithResult(prom.ErrVerify), err)
 		return serrors.Wrap("verifying beacon", err)
 	}
+	timeInsertS := time.Now()
 	stat, err := h.Inserter.InsertBeacon(ctx, b)
 	if err != nil {
 		logger.Debug("Failed to insert beacon", "err", err)
@@ -100,13 +104,14 @@ func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.U
 		return serrors.Wrap("inserting beacon", err)
 
 	}
+	timeInsertE := time.Now()
 	labels = labels.WithResult(resultValue(stat.Inserted, stat.Updated, stat.Filtered))
 	h.updateMetric(span, labels, err)
 	logger.Debug("Inserted beacon")
-	stopHandle := time.Now()
+	timeHandleE := time.Now()
 
-	if err := procperf.AddTimeDoneBeacon(bcnId, procperf.Received, startHandle, stopHandle); err != nil {
-		return serrors.Wrap("PROCPERF: error done receive", err)
+	if err := procperf.AddTimestampsDoneBeacon(bcnId, procperf.Received, []time.Time{timeHandleS, timePreFilterS, timeValidateS, timeVerifyS, timeInsertS, timeInsertE, timeHandleE}); err != nil {
+		return serrors.Wrap("PROCPERF: error handling beacon", err)
 	}
 
 	return nil

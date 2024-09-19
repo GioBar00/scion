@@ -16,6 +16,7 @@ package beaconing
 
 import (
 	"context"
+	"github.com/scionproto/scion/private/procperf"
 	"net"
 	"strconv"
 	"sync"
@@ -116,6 +117,7 @@ func (r *WriteScheduler) run(ctx context.Context) error {
 	if !(r.Tick.Overdue(r.lastWrite) || r.Tick.Passed()) {
 		return nil
 	}
+	timeWriterS := time.Now()
 	segments, err := r.Provider.SegmentsToRegister(ctx, r.Type)
 	if err != nil {
 		return err
@@ -125,9 +127,13 @@ func (r *WriteScheduler) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	timeWriterE := time.Now()
 	r.logSummary(ctx, &summary{count: stats.Count, srcs: stats.StartIAs})
 	if stats.Count > 0 {
 		r.lastWrite = r.Tick.Now()
+		if err := procperf.AddTimestampsDoneBeacon(r.Type.String(), procperf.Written, []time.Time{timeWriterS, timeWriterE}); err != nil {
+			log.Error("PROCPERF: error writing beacon", "err", err)
+		}
 	}
 	return err
 }

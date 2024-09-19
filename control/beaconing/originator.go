@@ -159,6 +159,7 @@ type beaconOriginator struct {
 
 // originateBeacon originates a beacon on the given ifID.
 func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
+	timeOriginateS := time.Now()
 	labels := originatorLabels{intf: o.intf}
 	topoInfo := o.intf.TopoInfo()
 	beacon, err := o.createBeacon(ctx)
@@ -166,10 +167,10 @@ func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
 		o.incrementMetrics(labels.WithResult("err_create"))
 		return serrors.Wrap("creating beacon", err, "egress_interface", o.intf.TopoInfo().ID)
 	}
-
+	timeCreateE := time.Now()
 	bcnId := procperf.GetFullId(beacon.GetLoggingID(), beacon.Info.SegmentID)
 
-	senderStart := time.Now()
+	timeSenderS := time.Now()
 	senderCtx, cancelF := context.WithTimeout(ctx, defaultNewSenderTimeout)
 	defer cancelF()
 
@@ -182,25 +183,24 @@ func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
 	if err != nil {
 		o.incrementMetrics(labels.WithResult(prom.ErrNetwork))
 		return serrors.Wrap("getting beacon sender", err,
-			"waited_for", time.Since(senderStart).String())
+			"waited_for", time.Since(timeSenderS).String())
 
 	}
 	defer sender.Close()
 
-	sendStart := time.Now()
+	timeSendS := time.Now()
 	if err := sender.Send(ctx, beacon); err != nil {
 		o.incrementMetrics(labels.WithResult(prom.ErrNetwork))
 		return serrors.Wrap("sending beacon", err,
-			"waited_for", time.Since(sendStart).String())
+			"waited_for", time.Since(timeSendS).String())
 
 	}
 	o.onSuccess(o.intf)
 	o.incrementMetrics(labels.WithResult(prom.Success))
 
-	stopOriginate := time.Now()
-
-	if err := procperf.AddTimeDoneBeacon(bcnId, procperf.Originated, senderStart, stopOriginate, bcnId); err != nil {
-		return serrors.Wrap("PROCPERF: error done beacon", err)
+	timeOriginateE := time.Now()
+	if err := procperf.AddTimestampsDoneBeacon(bcnId, procperf.Originated, []time.Time{timeOriginateS, timeCreateE, timeSenderS, timeSendS, timeOriginateE}, bcnId); err != nil {
+		return serrors.Wrap("PROCPERF: error originating beacon", err)
 	}
 
 	return nil
