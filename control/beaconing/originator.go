@@ -159,7 +159,8 @@ type beaconOriginator struct {
 
 // originateBeacon originates a beacon on the given ifID.
 func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
-	timeOriginateS := time.Now()
+	pp := procperf.GetNew(procperf.Originated, "") // Add beacon ID after creation
+	timeCreateS := time.Now()
 	labels := originatorLabels{intf: o.intf}
 	topoInfo := o.intf.TopoInfo()
 	beacon, err := o.createBeacon(ctx)
@@ -168,8 +169,11 @@ func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
 		return serrors.Wrap("creating beacon", err, "egress_interface", o.intf.TopoInfo().ID)
 	}
 	timeCreateE := time.Now()
+	pp.AddDurationT(timeCreateS, timeCreateE) // 0
 	bcnId := procperf.GetFullId(beacon.GetLoggingID(), beacon.Info.SegmentID)
-
+	pp.SetID(bcnId)
+	pp.SetNextID(bcnId)
+	defer pp.Write()
 	timeSenderS := time.Now()
 	senderCtx, cancelF := context.WithTimeout(ctx, defaultNewSenderTimeout)
 	defer cancelF()
@@ -187,7 +191,8 @@ func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
 
 	}
 	defer sender.Close()
-
+	timeSenderE := time.Now()
+	pp.AddDurationT(timeSenderS, timeSenderE) // 1
 	timeSendS := time.Now()
 	if err := sender.Send(ctx, beacon); err != nil {
 		o.incrementMetrics(labels.WithResult(prom.ErrNetwork))
@@ -195,13 +200,13 @@ func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
 			"waited_for", time.Since(timeSendS).String())
 
 	}
+	timeSendE := time.Now()
+	pp.AddDurationT(timeSendS, timeSendE) // 2
+	timeMetricsS := time.Now()
 	o.onSuccess(o.intf)
 	o.incrementMetrics(labels.WithResult(prom.Success))
-
-	timeOriginateE := time.Now()
-	if err := procperf.AddTimestampsDoneBeacon(bcnId, procperf.Originated, []time.Time{timeOriginateS, timeCreateE, timeSenderS, timeSendS, timeOriginateE}, bcnId); err != nil {
-		return serrors.Wrap("PROCPERF: error originating beacon", err)
-	}
+	timeMetricsE := time.Now()
+	pp.AddDurationT(timeMetricsS, timeMetricsE) // 3
 
 	return nil
 }

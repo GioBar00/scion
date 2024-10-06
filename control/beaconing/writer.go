@@ -117,23 +117,27 @@ func (r *WriteScheduler) run(ctx context.Context) error {
 	if !(r.Tick.Overdue(r.lastWrite) || r.Tick.Passed()) {
 		return nil
 	}
-	timeWriterS := time.Now()
+	pp := procperf.GetNew(procperf.Written, r.Type.String())
+	timeGetS := time.Now()
 	segments, err := r.Provider.SegmentsToRegister(ctx, r.Type)
 	if err != nil {
 		return err
 	}
+	timeGetE := time.Now()
+	pp.SetNumBeacons(uint32(len(segments)))
+	pp.AddDurationT(timeGetS, timeGetE)
+	timeWriterS := time.Now()
 	peers := sortedIntfs(r.Intfs, topology.Peer)
 	stats, err := r.Writer.Write(ctx, segments, peers)
 	if err != nil {
 		return err
 	}
 	timeWriterE := time.Now()
+	pp.AddDurationT(timeWriterS, timeWriterE)
 	r.logSummary(ctx, &summary{count: stats.Count, srcs: stats.StartIAs})
 	if stats.Count > 0 {
 		r.lastWrite = r.Tick.Now()
-		if err := procperf.AddTimestampsDoneBeacon(r.Type.String(), procperf.Written, []time.Time{timeWriterS, timeWriterE}); err != nil {
-			log.Error("PROCPERF: error writing beacon", "err", err)
-		}
+		pp.Write()
 	}
 	return err
 }

@@ -90,19 +90,23 @@ func (p *Propagator) Run(ctx context.Context) {
 }
 
 func (p *Propagator) run(ctx context.Context) error {
+	ppR := procperf.GetNew(procperf.Retrieved, "") // Set id later
 	timeCheckS := time.Now()
 	intfs := p.needsBeacons()
 	if len(intfs) == 0 {
 		return nil
 	}
+	timeCheckE := time.Now()
+	ppR.AddDurationT(timeCheckS, timeCheckE)
+	timeGroupS := time.Now()
 	peers := sortedIntfs(p.AllInterfaces, topology.Peer)
-	timeGroupBeaconsS := time.Now()
 	beacons, err := p.beaconsPerInterface(ctx, intfs)
 	if err != nil {
 		metrics.CounterInc(p.InternalErrors)
 		return err
 	}
-	timeGroupBeaconsE := time.Now()
+	timeGroupE := time.Now()
+	ppR.AddDurationT(timeGroupS, timeGroupE)
 	// Only log on info and error level every propagation period to reduce
 	// noise. The offending logs events are redirected to debug level.
 	silent := !p.Tick.Passed()
@@ -113,10 +117,8 @@ func (p *Propagator) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	if err := procperf.AddTimestampsDoneBeacon(fmt.Sprintf("%d", jobID), procperf.Retrieved, []time.Time{timeCheckS, timeGroupBeaconsS, timeGroupBeaconsE}); err != nil {
-		logger.Error("PROCPERF: Error when getting job", "err", err)
-	}
+	ppR.SetID(fmt.Sprintf("%d", jobID))
+	ppR.Write()
 
 	p.logCandidateBeacons(logger, beacons)
 
@@ -274,6 +276,9 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 			success = true
 		}
 	)
+	ppP := procperf.GetNew(procperf.Propagated, fmt.Sprintf("%s %d", jobID, p.intf.TopoInfo().ID))
+	defer ppP.Write()
+	ppP.SetNumBeacons(uint32(len(p.beacons)))
 	timeSenderS := time.Now()
 	senderCtx, cancel := context.WithTimeout(ctx, defaultNewSenderTimeout)
 	defer cancel()
@@ -293,12 +298,7 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 	}
 	defer sender.Close()
 	timeSenderE := time.Now()
-
-	if len(jobID) > 0 {
-		if err := procperf.AddTimestampsDoneBeacon(jobID[0], procperf.Sender, []time.Time{timeSenderS, timeSenderE}); err != nil {
-			logger.Error("PROCPERF: Error when creating sender for propagating", "err", err)
-		}
-	}
+	ppP.AddDurationT(timeSenderS, timeSenderE) // 0
 
 	var wg sync.WaitGroup
 	for _, b := range p.beacons {
@@ -311,6 +311,9 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 			// Collect the ID before the segment is extended such that it
 			// matches the ID that was logged above in logCandidateBeacons.
 			id := b.Segment.GetLoggingID()
+			bcnId := procperf.GetFullId(id, b.Segment.Info.SegmentID)
+			pp := procperf.GetNew(procperf.PropagatedBcn, bcnId)
+			defer pp.Write()
 			timeExtendS := time.Now()
 			if err := p.extender.Extend(ctx, b.Segment, b.InIfID, egress, p.peers); err != nil {
 				logger.Error("Unable to extend beacon",
@@ -323,6 +326,8 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 				p.incMetric(b.Segment.FirstIA(), b.InIfID, egress, "err_create")
 				return
 			}
+			timeExtendE := time.Now()
+			pp.AddDurationT(timeExtendS, timeExtendE) // 0
 
 			timeSendS := time.Now()
 			if err := sender.Send(ctx, b.Segment); err != nil {
@@ -338,13 +343,15 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 				return
 			}
 			timeSendE := time.Now()
+			pp.AddDurationT(timeSendS, timeSendE) // 1
+			timeMetricsS := time.Now()
 			setSuccess()
 			p.incMetric(b.Segment.FirstIA(), b.InIfID, egress, prom.Success)
 			p.intf.Propagate(p.now)
-			timePropagateE := time.Now()
-			bcnId := procperf.GetFullId(id, b.Segment.Info.SegmentID)
+			timeMetricsE := time.Now()
+			pp.AddDurationT(timeMetricsS, timeMetricsE) // 2
 			newBcnId := procperf.GetFullId(b.Segment.GetLoggingID(), b.Segment.Info.SegmentID)
-
+			ppP.SetNextID(newBcnId)
 			if logger.Enabled(log.DebugLevel) {
 				logger.Debug("Propagated beacon",
 					"egress_interface", egress,
@@ -354,10 +361,6 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 					"waited_for", time.Since(timeSendS).String(),
 					"err", err,
 				)
-			}
-
-			if err := procperf.AddTimestampsDoneBeacon(bcnId, procperf.Propagated, []time.Time{timeExtendS, timeSendS, timeSendE, timePropagateE}, newBcnId); err != nil {
-				logger.Error("PROCPERF: error propagating beacon", "err", err)
 			}
 		}()
 	}

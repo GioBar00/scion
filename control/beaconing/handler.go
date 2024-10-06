@@ -56,7 +56,9 @@ type Handler struct {
 // HandleBeacon handles a beacon received from peer.
 func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.UDPAddr) error {
 	bcnId := procperf.GetFullId(b.Segment.GetLoggingID(), b.Segment.Info.SegmentID)
-	timeHandleS := time.Now()
+	pp := procperf.GetNew(procperf.Received, bcnId)
+
+	timeCtxS := time.Now()
 	span := opentracing.SpanFromContext(ctx)
 	labels := handlerLabels{Ingress: b.InIfID}
 
@@ -76,26 +78,36 @@ func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.U
 	labels.Neighbor = upstream
 	logger := log.FromCtx(ctx).New("beacon", b, "upstream", upstream)
 	ctx = log.CtxWith(ctx, logger)
+	timeCtxE := time.Now()
 
+	pp.AddDurationT(timeCtxS, timeCtxE) // 0
+	defer pp.Write()
 	logger.Debug("Received beacon")
+
 	timePreFilterS := time.Now()
 	if err := h.Inserter.PreFilter(b); err != nil {
 		logger.Debug("Beacon pre-filtered", "err", err)
 		h.updateMetric(span, labels.WithResult("err_prefilter"), err)
 		return err
 	}
+	timePreFilterE := time.Now()
+	pp.AddDurationT(timePreFilterS, timePreFilterE) // 1
 	timeValidateS := time.Now()
 	if err := h.validateASEntry(b, intf); err != nil {
 		logger.Info("Beacon validation failed", "err", err)
 		h.updateMetric(span, labels.WithResult(prom.ErrVerify), err)
 		return err
 	}
+	timeValidateE := time.Now()
+	pp.AddDurationT(timeValidateS, timeValidateE) // 2
 	timeVerifyS := time.Now()
 	if err := h.verifySegment(ctx, b.Segment, peer); err != nil {
 		logger.Info("Beacon verification failed", "err", err)
 		h.updateMetric(span, labels.WithResult(prom.ErrVerify), err)
 		return serrors.Wrap("verifying beacon", err)
 	}
+	timeVerifyE := time.Now()
+	pp.AddDurationT(timeVerifyS, timeVerifyE) // 3
 	timeInsertS := time.Now()
 	stat, err := h.Inserter.InsertBeacon(ctx, b)
 	if err != nil {
@@ -105,15 +117,13 @@ func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.U
 
 	}
 	timeInsertE := time.Now()
+	pp.AddDurationT(timeInsertS, timeInsertE) // 4
+	timeMetricsS := time.Now()
 	labels = labels.WithResult(resultValue(stat.Inserted, stat.Updated, stat.Filtered))
 	h.updateMetric(span, labels, err)
+	timeMetricsE := time.Now()
+	pp.AddDurationT(timeMetricsS, timeMetricsE) // 5
 	logger.Debug("Inserted beacon")
-	timeHandleE := time.Now()
-
-	if err := procperf.AddTimestampsDoneBeacon(bcnId, procperf.Received, []time.Time{timeHandleS, timePreFilterS, timeValidateS, timeVerifyS, timeInsertS, timeInsertE, timeHandleE}); err != nil {
-		return serrors.Wrap("PROCPERF: error handling beacon", err)
-	}
-
 	return nil
 }
 
