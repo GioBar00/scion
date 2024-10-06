@@ -97,7 +97,7 @@ func (p *Propagator) run(ctx context.Context) error {
 		return nil
 	}
 	timeCheckE := time.Now()
-	ppR.AddDurationT(timeCheckS, timeCheckE)
+	ppR.AddDurationT(timeCheckS, timeCheckE) // 0
 	timeGroupS := time.Now()
 	peers := sortedIntfs(p.AllInterfaces, topology.Peer)
 	beacons, err := p.beaconsPerInterface(ctx, intfs)
@@ -106,7 +106,7 @@ func (p *Propagator) run(ctx context.Context) error {
 		return err
 	}
 	timeGroupE := time.Now()
-	ppR.AddDurationT(timeGroupS, timeGroupE)
+	ppR.AddDurationT(timeGroupS, timeGroupE) // 1
 	// Only log on info and error level every propagation period to reduce
 	// noise. The offending logs events are redirected to debug level.
 	silent := !p.Tick.Passed()
@@ -313,6 +313,7 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 			id := b.Segment.GetLoggingID()
 			bcnId := procperf.GetFullId(id, b.Segment.Info.SegmentID)
 			pp := procperf.GetNew(procperf.PropagatedBcn, bcnId)
+			pp.SetData(fmt.Sprintf("%s %d", jobID, p.intf.TopoInfo().ID))
 			defer pp.Write()
 			timeExtendS := time.Now()
 			if err := p.extender.Extend(ctx, b.Segment, b.InIfID, egress, p.peers); err != nil {
