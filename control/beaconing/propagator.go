@@ -352,7 +352,7 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 			timeMetricsE := time.Now()
 			pp.AddDurationT(timeMetricsS, timeMetricsE) // 2
 			newBcnId := procperf.GetFullId(b.Segment.GetLoggingID(), b.Segment.Info.SegmentID)
-			ppP.SetNextID(newBcnId)
+			pp.SetNextID(newBcnId)
 			if logger.Enabled(log.DebugLevel) {
 				logger.Debug("Propagated beacon",
 					"egress_interface", egress,
