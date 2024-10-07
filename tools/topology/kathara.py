@@ -248,31 +248,51 @@ class KatharaLabGenerator(object):
         for topo_id, remote in scionds.items():
             conf_dir = str(os.path.join(self.output_base, topo_id.base_dir(self.args.output_dir)))
             others = [t for t in scionds.keys() if t != topo_id]
+            server_port = 64646
             full_conn_sh = f"""#!/bin/bash
-
+# Full connectivity test script
+date --rfc-3339=seconds >> fc-$(hostname).txt
+            
 # Start the server in the background
-./bin/end2end -mode server -local [{topo_id},{scionds[topo_id]}]:64646 &
+bash -l -c "./bin/end2end -mode server -local [{topo_id},{scionds[topo_id]}]:{str(server_port)}" >> server_output.log 2>&1 &
 SERVER_PID=$!
+
+TARGET_PONGS={len(others)}
+PONG_COUNT=0
 
 # Function to run the client command with the provided remote address, retrying if ERROR is found
 function run_client {{
     local remote_address=$1
+    local client_port=$2
     while true; do
-        OUTPUT=$(./bin/end2end -mode client -local [{topo_id},{scionds[topo_id]}]:64645 -remote [$remote_address]:64646 2>&1)
+        OUTPUT=$(bash -l -c "./bin/end2end -mode client -local [{topo_id},{scionds[topo_id]}]:$client_port -remote [$remote_address]:{str(server_port)} -timeout 1s" 2>&1)
+        # Append the output to the a log file
+        echo "$OUTPUT" >> client${{client_port}}_output.log
         if echo "$OUTPUT" | grep -q "Received pong"; then
-            echo "Received pong from $remote_address" >> full_conn.log
             break
         fi
-        # Append the output to the a log file
-        echo "$OUTPUT" >> full_conn.log
+    done
+}}
+
+# Function to monitor server output for "Sent pong to"
+function monitor_server {{
+    while [ "$PONG_COUNT" -lt "$TARGET_PONGS" ]; do
+        # Read the entire server output log and count occurrences of "Sent pong to"
+        PONG_COUNT=$(grep -o "Sent pong to" server_output.log | wc -l)
+        
+        # Sleep before rechecking
         sleep 1
     done
 }}
+
+# Run the server monitoring in the background
+monitor_server &
+MONITOR_PID=$!
+
 """
             for i, other in enumerate(others):
                 remote = scionds[other]
-                full_conn_sh += f"""
-run_client "{other},{remote}" &
+                full_conn_sh += f"""run_client "{other},{remote}" "{server_port - i - 1}" &
 PID{i}=$!
 """
             # Wait for all clients to finish
@@ -282,11 +302,14 @@ PID{i}=$!
             full_conn_sh += '\n'
 
             full_conn_sh += """
+# Output the completion time in RFC3339 format
+date --rfc-3339=seconds >> fc-$(hostname).txt
+
+# Wait for the monitor server function to finish
+wait $MONITOR_PID
+
 # Kill the server
 kill $SERVER_PID
-
-# Output the completion time in RFC3339 format
-date --rfc-3339=seconds > fc-$(hostname).txt
 """
 
             write_file(os.path.join(conf_dir, FULL_CONN_SH), full_conn_sh)
