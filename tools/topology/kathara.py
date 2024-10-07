@@ -20,6 +20,7 @@ KATHARA_LAB_CONF = 'lab.conf'
 SCMP_PATH_PROBE_TARGETS_FILE = "scmp_path_probe_targets.json"
 SCMP_PATH_PROBE_SCRIPT_FILE = "scmp_path_probe.py"
 CRON_SCRIPT_FILE = "cron.sh"
+FULL_CONN_SH = "full_conn.sh"
 
 
 class KatharaLabGenArgs(ArgsTopoDicts):
@@ -80,6 +81,7 @@ class KatharaLabGenerator(object):
         self._add_commands()
         self._patch_monitoring_config()
         self._expose_paths_metrics()
+        self._create_full_conn_script()
         self._write_lab()
 
     def _initiate_lab(self):
@@ -191,9 +193,12 @@ class KatharaLabGenerator(object):
                 elif dev_id.startswith("cs"):
                     self.device_info[dev_id]["startup"] += f'/app/control --config /{self.config_dir}/cs.toml &\n'
                 elif dev_id.startswith("sd"):
-                    self.device_info[dev_id]["startup"] += f'chmod +x /{self.config_dir}/{CRON_SCRIPT_FILE}\n'
-                    # self.device_info[dev_id]["startup"] += f'/{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
                     self.device_info[dev_id]["startup"] += f'/app/daemon --config /{self.config_dir}/sd.toml &\n'
+                    self.device_info[dev_id]["startup"] += f'chmod +x /{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
+                    self.device_info[dev_id]["startup"] += f'chmod +x /{self.config_dir}/{FULL_CONN_SH} &\n'
+                    self.device_info[dev_id]["startup"] += "sleep 2s\n"
+                    # self.device_info[dev_id]["startup"] += f'/{self.config_dir}/{CRON_SCRIPT_FILE} &\n'
+                    self.device_info[dev_id]["startup"] += f'/{self.config_dir}/{FULL_CONN_SH} &\n'
 
                     # Add shutdown commands: Clean scmp_path logs from shared folder
                     # self.device_info[dev_id]["shutdown"] += f'pkill -f {CRON_SCRIPT_FILE}\n'
@@ -232,8 +237,62 @@ class KatharaLabGenerator(object):
                     f.write(toml.dumps(conf))
                     f.truncate()
 
-    def _expose_paths_metrics(self):
+    def _create_full_conn_script(self):
+        scionds = {}
+        for topo_id, _ in self.args.topo_dicts.items():
+            for dev_id in self.topoid_devices[topo_id]:
+                if dev_id.startswith("sd"):
+                    ip = self.device_info[dev_id]["ip"]
+                    scionds[topo_id] = ip.ip
+                    break
+        for topo_id, remote in scionds.items():
+            conf_dir = str(os.path.join(self.output_base, topo_id.base_dir(self.args.output_dir)))
+            others = [t for t in scionds.keys() if t != topo_id]
+            full_conn_sh = f"""#!/bin/bash
 
+# Start the server in the background
+./bin/end2end -mode server -local [{topo_id},{scionds[topo_id]}]:64646 &
+SERVER_PID=$!
+
+# Function to run the client command with the provided remote address, retrying if ERROR is found
+function run_client {{
+    local remote_address=$1
+    while true; do
+        OUTPUT=$(./bin/end2end -mode client -local [{topo_id},{scionds[topo_id]}]:64645 -remote [$remote_address]:64646 2>&1)
+        if echo "$OUTPUT" | grep -q "Received pong"; then
+            echo "Received pong from $remote_address" >> full_conn.log
+            break
+        fi
+        # Append the output to the a log file
+        echo "$OUTPUT" >> full_conn.log
+        sleep 1
+    done
+}}
+"""
+            for i, other in enumerate(others):
+                remote = scionds[other]
+                full_conn_sh += f"""
+run_client "{other},{remote}" &
+PID{i}=$!
+"""
+            # Wait for all clients to finish
+            full_conn_sh += 'wait '
+            for i in range(len(others)):
+                full_conn_sh += f'$PID{i} '
+            full_conn_sh += '\n'
+
+            full_conn_sh += """
+# Kill the server
+kill $SERVER_PID
+
+# Output the completion time in RFC3339 format
+date --rfc-3339=seconds > fc-$(hostname).txt
+"""
+
+            write_file(os.path.join(conf_dir, FULL_CONN_SH), full_conn_sh)
+
+
+    def _expose_paths_metrics(self):
         write_file(os.path.join(os.path.join(self.output_base, self.args.output_dir), CRON_SCRIPT_FILE), self._cron_content)
         write_file(os.path.join(os.path.join(self.output_base, self.args.output_dir), SCMP_PATH_PROBE_SCRIPT_FILE), self._scmp_path_probe_content)
 
@@ -278,6 +337,7 @@ class KatharaLabGenerator(object):
                     symlink(f"{conf_dir}/{SCMP_PATH_PROBE_TARGETS_FILE}", f"{dest_conf_dir}/{SCMP_PATH_PROBE_TARGETS_FILE}")
                     symlink(f"{str(os.path.join(self.output_base, self.args.output_dir))}/{CRON_SCRIPT_FILE}", f"{dest_conf_dir}/{CRON_SCRIPT_FILE}")
                     symlink(f"{str(os.path.join(self.output_base, self.args.output_dir))}/{SCMP_PATH_PROBE_SCRIPT_FILE}", f"{dest_conf_dir}/{SCMP_PATH_PROBE_SCRIPT_FILE}")
+                    symlink(f"{conf_dir}/{FULL_CONN_SH}", f"{dest_conf_dir}/{FULL_CONN_SH}")
                 else:
                     real_dev_id = self.get_real_device_id(dev_id)
                     symlink(f"{conf_dir}/{real_dev_id}.toml", f"{dest_conf_dir}/{real_dev_id[:2]}.toml")
