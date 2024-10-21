@@ -56,7 +56,7 @@ type Handler struct {
 // HandleBeacon handles a beacon received from peer.
 func (h Handler) HandleBeacon(ctx context.Context, b beacon.Beacon, peer *snet.UDPAddr) error {
 	bcnId := procperf.GetFullId(b.Segment.GetLoggingID(), b.Segment.Info.SegmentID)
-	pp := procperf.GetNew(procperf.Received, bcnId)
+	pp := procperf.GetNew(procperf.ReceivedBcn, bcnId)
 
 	timeCtxS := time.Now()
 	span := opentracing.SpanFromContext(ctx)

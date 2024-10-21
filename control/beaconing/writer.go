@@ -125,7 +125,7 @@ func (r *WriteScheduler) run(ctx context.Context) error {
 	}
 	timeGetE := time.Now()
 	pp.SetNumBeacons(uint32(len(segments)))
-	pp.AddDurationT(timeGetS, timeGetE)
+	pp.AddDurationT(timeGetS, timeGetE) // 0
 	timeWriterS := time.Now()
 	peers := sortedIntfs(r.Intfs, topology.Peer)
 	stats, err := r.Writer.Write(ctx, segments, peers)
@@ -133,7 +133,7 @@ func (r *WriteScheduler) run(ctx context.Context) error {
 		return err
 	}
 	timeWriterE := time.Now()
-	pp.AddDurationT(timeWriterS, timeWriterE)
+	pp.AddDurationT(timeWriterS, timeWriterE) // 1
 	r.logSummary(ctx, &summary{count: stats.Count, srcs: stats.StartIAs})
 	if stats.Count > 0 {
 		r.lastWrite = r.Tick.Now()

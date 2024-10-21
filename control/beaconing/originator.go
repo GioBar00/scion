@@ -159,7 +159,7 @@ type beaconOriginator struct {
 
 // originateBeacon originates a beacon on the given ifID.
 func (o *beaconOriginator) originateBeacon(ctx context.Context) error {
-	pp := procperf.GetNew(procperf.Originated, "") // Add beacon ID after creation
+	pp := procperf.GetNew(procperf.OriginatedBcn, "") // Add beacon ID after creation
 	timeCreateS := time.Now()
 	labels := originatorLabels{intf: o.intf}
 	topoInfo := o.intf.TopoInfo()

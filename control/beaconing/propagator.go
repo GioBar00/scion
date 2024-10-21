@@ -90,7 +90,7 @@ func (p *Propagator) Run(ctx context.Context) {
 }
 
 func (p *Propagator) run(ctx context.Context) error {
-	ppR := procperf.GetNew(procperf.Retrieved, "") // Set id later
+	ppR := procperf.GetNew(procperf.Propagated, "") // Set id later
 	timeCheckS := time.Now()
 	intfs := p.needsBeacons()
 	if len(intfs) == 0 {
@@ -118,6 +118,11 @@ func (p *Propagator) run(ctx context.Context) error {
 		return err
 	}
 	ppR.SetID(fmt.Sprintf("%d", jobID))
+	numBeacons := 0
+	for _, beacons := range beacons {
+		numBeacons += len(beacons)
+	}
+	ppR.SetNumBeacons(uint32(numBeacons))
 	ppR.Write()
 
 	p.logCandidateBeacons(logger, beacons)
@@ -276,9 +281,9 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 			success = true
 		}
 	)
-	ppP := procperf.GetNew(procperf.Propagated, fmt.Sprintf("%s %d", jobID, p.intf.TopoInfo().ID))
-	defer ppP.Write()
-	ppP.SetNumBeacons(uint32(len(p.beacons)))
+	//ppP := procperf.GetNew(procperf.Propagated, fmt.Sprintf("%s %d", jobID, p.intf.TopoInfo().ID))
+	//defer ppP.Write()
+	//ppP.SetNumBeacons(uint32(len(p.beacons)))
 	timeSenderS := time.Now()
 	senderCtx, cancel := context.WithTimeout(ctx, defaultNewSenderTimeout)
 	defer cancel()
@@ -298,7 +303,7 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 	}
 	defer sender.Close()
 	timeSenderE := time.Now()
-	ppP.AddDurationT(timeSenderS, timeSenderE) // 0
+	//ppP.AddDurationT(timeSenderS, timeSenderE) // 0
 
 	var wg sync.WaitGroup
 	for _, b := range p.beacons {
@@ -315,6 +320,7 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 			pp := procperf.GetNew(procperf.PropagatedBcn, bcnId)
 			pp.SetData(fmt.Sprintf("%s %d", jobID, p.intf.TopoInfo().ID))
 			defer pp.Write()
+			pp.AddDuration(timeSenderE.Sub(timeSenderS).Seconds() / float64(len(p.beacons))) // 0
 			timeExtendS := time.Now()
 			if err := p.extender.Extend(ctx, b.Segment, b.InIfID, egress, p.peers); err != nil {
 				logger.Error("Unable to extend beacon",
@@ -328,7 +334,7 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 				return
 			}
 			timeExtendE := time.Now()
-			pp.AddDurationT(timeExtendS, timeExtendE) // 0
+			pp.AddDurationT(timeExtendS, timeExtendE) // 1
 
 			timeSendS := time.Now()
 			if err := sender.Send(ctx, b.Segment); err != nil {
@@ -344,13 +350,13 @@ func (p *propagator) Propagate(ctx context.Context, jobID ...string) error {
 				return
 			}
 			timeSendE := time.Now()
-			pp.AddDurationT(timeSendS, timeSendE) // 1
+			pp.AddDurationT(timeSendS, timeSendE) // 2
 			timeMetricsS := time.Now()
 			setSuccess()
 			p.incMetric(b.Segment.FirstIA(), b.InIfID, egress, prom.Success)
 			p.intf.Propagate(p.now)
 			timeMetricsE := time.Now()
-			pp.AddDurationT(timeMetricsS, timeMetricsE) // 2
+			pp.AddDurationT(timeMetricsS, timeMetricsE) // 3
 			newBcnId := procperf.GetFullId(b.Segment.GetLoggingID(), b.Segment.Info.SegmentID)
 			pp.SetNextID(newBcnId)
 			if logger.Enabled(log.DebugLevel) {
